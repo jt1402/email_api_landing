@@ -253,9 +253,7 @@ function DocsSection({
   return (
     <section
       id={id}
-      className={`scroll-mt-[88px] pb-14 mb-14 ${
-        last ? "" : "border-b border-border"
-      }`}
+      className={`pb-14 mb-14 ${last ? "" : "border-b border-border"}`}
     >
       {children}
     </section>

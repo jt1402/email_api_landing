@@ -1,19 +1,19 @@
 import Link from "next/link";
-import { keys, usage } from "@/lib/backend";
+import { billing, keys, usage } from "@/lib/backend";
 import { getSession } from "@/lib/session";
 
 export default async function DashboardOverview() {
   const token = (await getSession()) as string;
-  const [summary, keyList, recent] = await Promise.all([
+  const [summary, keyList, recent, balance] = await Promise.all([
     usage.summary(token),
     keys.list(token),
     usage.recent(token, 5),
+    billing.balance(token),
   ]);
 
   const activeKeys = keyList.filter((k) => !k.revoked_at);
-  const freeLimit = 500;
+  const creditsRemaining = balance.credit_balance_checks;
   const used = summary.checks_this_period;
-  const pct = Math.min(100, Math.round((used / freeLimit) * 100));
 
   return (
     <>
@@ -23,9 +23,18 @@ export default async function DashboardOverview() {
 
       <div className="mb-8 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
         <Stat
+          label="Credits remaining"
+          value={creditsRemaining.toLocaleString()}
+          sub={
+            <Link href="/dashboard/billing" className="text-accent">
+              Buy more →
+            </Link>
+          }
+        />
+        <Stat
           label="Checks this period"
           value={used.toLocaleString()}
-          sub={`${pct}% of ${freeLimit.toLocaleString()} free-tier limit`}
+          sub="Since the 1st of the month"
         />
         <Stat
           label="Blocks"

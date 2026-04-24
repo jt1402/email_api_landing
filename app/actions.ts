@@ -11,7 +11,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { auth, keys, BackendCallError } from "@/lib/backend";
+import { auth, billing, keys, BackendCallError, type BundleId } from "@/lib/backend";
 import { clearSession, getSession, setSession } from "@/lib/session";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -97,6 +97,15 @@ export async function createKeyAction(
   } catch (err) {
     return { ok: false, error: errMessage(err, "Could not create key.") };
   }
+}
+
+export async function buyBundleAction(formData: FormData): Promise<void> {
+  const token = await getSession();
+  if (!token) redirect("/login");
+  const bundle = String(formData.get("bundle") ?? "") as BundleId;
+  if (bundle !== "10k" && bundle !== "50k" && bundle !== "250k") return;
+  const { url } = await billing.checkout(token!, bundle);
+  redirect(url);
 }
 
 export async function revokeKeyAction(formData: FormData): Promise<void> {

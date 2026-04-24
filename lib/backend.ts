@@ -143,3 +143,16 @@ export const usage = {
       session,
     }),
 };
+
+export type BundleId = "10k" | "50k" | "250k";
+
+export const billing = {
+  balance: (session: string) =>
+    call<{ credit_balance_checks: number }>("/v1/billing/balance", { session }),
+  checkout: (session: string, bundle: BundleId) =>
+    call<{ url: string }>("/v1/billing/checkout", {
+      method: "POST",
+      session,
+      body: JSON.stringify({ bundle }),
+    }),
+};
