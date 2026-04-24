@@ -1,16 +1,25 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { createKeyAction, revokeKeyAction, type ActionResult } from "@/app/actions";
-import type { ApiKeyRow } from "@/lib/backend";
+import {
+  createKeyAction,
+  revokeKeyAction,
+  type CreateKeyResult,
+} from "@/app/actions";
+import type { ApiKeyRow, CreatedKey } from "@/lib/backend";
 
 type Props = { initialKeys: ApiKeyRow[] };
 
 export function KeysClient({ initialKeys }: Props) {
-  const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(
-    createKeyAction,
-    null
-  );
+  const [state, formAction, pending] = useActionState<
+    CreateKeyResult | null,
+    FormData
+  >(createKeyAction, null);
+  const [dismissedId, setDismissedId] = useState<number | null>(null);
+
+  const revealed: CreatedKey | null =
+    state?.ok && state.created.id !== dismissedId ? state.created : null;
+
   const active = initialKeys.filter((k) => !k.revoked_at);
   const revoked = initialKeys.filter((k) => k.revoked_at);
 
@@ -20,24 +29,26 @@ export function KeysClient({ initialKeys }: Props) {
         API keys
       </h2>
 
+      {revealed && (
+        <SecretBanner
+          created={revealed}
+          onDismiss={() => setDismissedId(revealed.id)}
+        />
+      )}
+
       <Panel>
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <h3 className="mb-1 text-[18px]">Create a key</h3>
             <p className="text-[14px] text-text-2">
-              Name something descriptive like &quot;Production&quot; or &quot;Staging&quot;. You&apos;ll see the
-              full secret once — store it safely.
+              Name something descriptive like &quot;Production&quot; or &quot;Staging&quot;. The full
+              secret is shown only once — store it in your secret manager.
             </p>
           </div>
         </div>
         {state && !state.ok && (
           <div className="mb-[14px] rounded-xs border border-[#fecaca] bg-[#fef2f2] px-3 py-[10px] text-[13px] leading-[1.5] text-[#b91c1c]">
             {state.error}
-          </div>
-        )}
-        {state?.ok && (
-          <div className="mb-[14px] rounded-xs border border-[#a7f3d0] bg-[#ecfdf5] px-3 py-[10px] text-[13px] leading-[1.5] text-[#047857]">
-            Key created. Copy the full secret from the row it just appeared in — we won&apos;t show it again.
           </div>
         )}
         <form action={formAction} className="flex gap-3">
@@ -86,6 +97,64 @@ export function KeysClient({ initialKeys }: Props) {
         </Panel>
       )}
     </>
+  );
+}
+
+function SecretBanner({
+  created,
+  onDismiss,
+}: {
+  created: CreatedKey;
+  onDismiss: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(created.key);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard blocked — user can still select and copy manually */
+    }
+  };
+
+  return (
+    <section className="mb-5 rounded-md border border-[#a7f3d0] bg-[#ecfdf5] px-6 py-5">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h3 className="text-[15px] font-semibold text-[#047857]">
+          Key created — copy this now
+        </h3>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="text-[13px] text-[#047857] underline-offset-2 hover:underline"
+        >
+          I&apos;ve saved it
+        </button>
+      </div>
+      <p className="mb-3 text-[13px] leading-[1.5] text-[#047857]">
+        This is the only time we show the full secret for{" "}
+        <span className="font-medium">{created.name}</span>. Store it in your
+        secret manager (Vercel / AWS / 1Password). If you lose it, revoke this
+        key and create a new one.
+      </p>
+      <div className="flex gap-2">
+        <input
+          readOnly
+          value={created.key}
+          onFocus={(e) => e.currentTarget.select()}
+          className="h-10 flex-1 rounded-sm border border-[#86efac] bg-surface px-3 font-mono text-[13px] text-text"
+        />
+        <button
+          type="button"
+          onClick={onCopy}
+          className="btn btn-primary h-10 whitespace-nowrap"
+        >
+          {copied ? "Copied" : "Copy key"}
+        </button>
+      </div>
+    </section>
   );
 }
 

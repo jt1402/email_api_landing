@@ -19,12 +19,16 @@ import {
   BackendCallError,
   type BundleId,
   type CheckResponse,
+  type CreatedKey,
 } from "@/lib/backend";
 import { clearSession, getSession, setSession } from "@/lib/session";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 export type CheckResult =
   | { ok: true; data: CheckResponse }
+  | { ok: false; error: string };
+export type CreateKeyResult =
+  | { ok: true; created: CreatedKey }
   | { ok: false; error: string };
 
 function errMessage(err: unknown, fallback: string): string {
@@ -94,17 +98,17 @@ export async function logoutAction(): Promise<void> {
 }
 
 export async function createKeyAction(
-  _prev: ActionResult | null,
+  _prev: CreateKeyResult | null,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<CreateKeyResult> {
   const token = await getSession();
   if (!token) return { ok: false, error: "Not signed in." };
   const name = String(formData.get("name") ?? "").trim() || "Untitled key";
   try {
-    await keys.create(token, name);
+    const created = await keys.create(token, name);
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/keys");
-    return { ok: true };
+    return { ok: true, created };
   } catch (err) {
     return { ok: false, error: errMessage(err, "Could not create key.") };
   }
