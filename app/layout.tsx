@@ -14,6 +14,10 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+// Colocate with the Railway backend (us-west2 / Oregon) to cut ~100-150ms
+// off every backend roundtrip from Server Components and Server Actions.
+export const preferredRegion = "pdx1";
+
 export const metadata: Metadata = {
   title: "VerifyMail — Tell who's really behind an email",
   description:
