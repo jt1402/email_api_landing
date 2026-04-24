@@ -38,7 +38,7 @@ function BundleCard({ bundle }: { bundle: Bundle }) {
           buyBundleAction(fd);
         });
       }}
-      className={`rounded-md border p-6 text-center transition-transform ${
+      className={`flex flex-col rounded-md border p-6 text-center transition-transform ${
         bundle.featured
           ? "border-accent bg-accent-soft"
           : "border-border bg-surface hover:-translate-y-0.5 hover:shadow-md"
@@ -50,21 +50,23 @@ function BundleCard({ bundle }: { bundle: Bundle }) {
       <div className="mb-[6px] text-[32px] font-semibold tracking-[-0.02em] text-text">
         {bundle.price}
       </div>
-      <div className="mb-4 text-[13px] text-text-2">
+      <div className="text-[13px] text-text-2">
         <span className="font-mono">{bundle.effective}</span> / check
       </div>
-      {bundle.save && (
-        <div className="mb-4 inline-block rounded-full bg-ok px-[10px] py-[3px] font-mono text-[11px] font-medium tracking-[0.06em] text-white">
-          Save {bundle.save}
-        </div>
-      )}
-      <button
-        type="submit"
-        disabled={isPending}
-        className={`btn btn-block ${bundle.featured ? "btn-primary" : "btn-ghost"}`}
-      >
-        {isPending ? "Redirecting…" : "Buy bundle"}
-      </button>
+      <div className="mt-auto pt-4">
+        {bundle.save && (
+          <div className="mb-4 inline-block rounded-full bg-ok px-[10px] py-[3px] font-mono text-[11px] font-medium tracking-[0.06em] text-white">
+            Save {bundle.save}
+          </div>
+        )}
+        <button
+          type="submit"
+          disabled={isPending}
+          className={`btn btn-block ${bundle.featured ? "btn-primary" : "btn-ghost"}`}
+        >
+          {isPending ? "Redirecting…" : "Buy bundle"}
+        </button>
+      </div>
     </form>
   );
 }

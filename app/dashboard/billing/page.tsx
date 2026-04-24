@@ -2,6 +2,7 @@ import Link from "next/link";
 import { billing } from "@/lib/backend";
 import { getSession } from "@/lib/session";
 import { BundleButtons } from "./BundleButtons";
+import { RefreshAfterCheckout } from "./RefreshAfterCheckout";
 
 type Search = Promise<{ checkout?: string }>;
 
@@ -19,9 +20,12 @@ export default async function BillingPage({
       <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em]">Billing</h2>
 
       {checkout === "success" && (
-        <div className="mb-5 rounded-xs border border-[#a7f3d0] bg-[#ecfdf5] px-3 py-[10px] text-[13px] leading-[1.5] text-[#047857]">
-          Bundle purchased. Credits have been added to your account.
-        </div>
+        <>
+          <RefreshAfterCheckout />
+          <div className="mb-5 rounded-xs border border-[#a7f3d0] bg-[#ecfdf5] px-3 py-[10px] text-[13px] leading-[1.5] text-[#047857]">
+            Bundle purchased. Credits have been added to your account.
+          </div>
+        </>
       )}
       {checkout === "cancelled" && (
         <div className="mb-5 rounded-xs border border-border bg-bg-alt px-3 py-[10px] text-[13px] leading-[1.5] text-text-2">

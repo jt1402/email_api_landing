@@ -114,6 +114,12 @@ export async function createKeyAction(
   }
 }
 
+export async function refreshDashboardAction(): Promise<void> {
+  // Invalidate the whole /dashboard subtree so pages pick up fresh balance +
+  // has_purchased after an async event (Stripe webhook crediting a bundle).
+  revalidatePath("/dashboard", "layout");
+}
+
 export async function buyBundleAction(formData: FormData): Promise<void> {
   const token = await getSession();
   if (!token) redirect("/login");
