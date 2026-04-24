@@ -61,7 +61,7 @@ export default async function BillingPage({
 
       <p className="text-[13px] text-text-3">
         Need something custom?{" "}
-        <a href="mailto:sales@verifymail.dev" className="text-accent underline underline-offset-2">
+        <a href="mailto:sales@verifymailapi.com" className="text-accent underline underline-offset-2">
           Contact sales
         </a>{" "}
         for volume pricing, SSO, or dedicated infrastructure.{" "}

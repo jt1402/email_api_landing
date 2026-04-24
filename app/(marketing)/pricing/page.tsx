@@ -64,7 +64,7 @@ export default function PricingPage() {
                 "Custom signals + allowlists",
               ]}
               cta={
-                <a href="mailto:sales@verifymail.dev" className="btn btn-ghost btn-block">
+                <a href="mailto:sales@verifymailapi.com" className="btn btn-ghost btn-block">
                   Contact sales
                 </a>
               }

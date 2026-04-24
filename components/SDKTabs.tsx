@@ -190,7 +190,7 @@ const tabs: Tab[] = [
     content: (
       <>
         <span className={TOK.fn}>curl</span>{" "}
-        <span className={TOK.str}>-X POST https://api.verifymail.dev/v1/check</span>{" "}
+        <span className={TOK.str}>-X POST https://api.verifymailapi.com/v1/check</span>{" "}
         \{"\n  "}
         <span className={TOK.kw}>-H</span>{" "}
         <span className={TOK.str}>&quot;X-API-Key: vm_live_...&quot;</span>{" "}

@@ -230,11 +230,11 @@ function ResultPanel({ data }: { data: CheckResponse }) {
 function CodeExamples() {
   const [tab, setTab] = useState<"curl" | "node" | "python">("curl");
   const samples = {
-    curl: `curl -X POST https://api.verifymail.dev/v1/check \\
+    curl: `curl -X POST https://api.verifymailapi.com/v1/check \\
   -H "X-API-Key: $VERIFYMAIL_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"email": "test@example.com"}'`,
-    node: `const res = await fetch("https://api.verifymail.dev/v1/check", {
+    node: `const res = await fetch("https://api.verifymailapi.com/v1/check", {
   method: "POST",
   headers: {
     "X-API-Key": process.env.VERIFYMAIL_KEY,
@@ -246,7 +246,7 @@ const result = await res.json();`,
     python: `import os, httpx
 
 r = httpx.post(
-    "https://api.verifymail.dev/v1/check",
+    "https://api.verifymailapi.com/v1/check",
     headers={"X-API-Key": os.environ["VERIFYMAIL_KEY"]},
     json={"email": "test@example.com"},
 )

@@ -34,7 +34,7 @@ export default function DocsPage() {
                 </ol>
 
                 <DocsCode>
-{`curl -X POST https://api.verifymail.dev/v1/check \\
+{`curl -X POST https://api.verifymailapi.com/v1/check \\
   -H "X-API-Key: vm_live_..." \\
   -H "Content-Type: application/json" \\
   -d '{"email":"user@mailinator.com"}'`}
@@ -63,7 +63,7 @@ export default function DocsPage() {
                   <span className="rounded bg-accent px-[9px] py-[3px] text-[11px] font-semibold tracking-[0.06em] text-white">
                     POST
                   </span>
-                  <span className="font-mono">https://api.verifymail.dev/v1/check</span>
+                  <span className="font-mono">https://api.verifymailapi.com/v1/check</span>
                 </div>
 
                 <DocsH3>Request body</DocsH3>

@@ -51,7 +51,7 @@ export default function LandingPage() {
                 <span className="mr-1 rounded bg-accent/20 px-2 py-[2px] text-[11px] font-semibold text-[#a5b4fc]">
                   POST
                 </span>
-                https://api.verifymail.dev/v1/check
+                https://api.verifymailapi.com/v1/check
               </div>
             </div>
             <div className="grid grid-cols-[38px_1fr] font-mono text-[13px] leading-[1.7]">
