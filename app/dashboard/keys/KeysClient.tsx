@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import {
   createKeyAction,
@@ -8,9 +9,9 @@ import {
 } from "@/app/actions";
 import type { ApiKeyRow, CreatedKey } from "@/lib/backend";
 
-type Props = { initialKeys: ApiKeyRow[] };
+type Props = { initialKeys: ApiKeyRow[]; hasPurchased: boolean };
 
-export function KeysClient({ initialKeys }: Props) {
+export function KeysClient({ initialKeys, hasPurchased }: Props) {
   const [state, formAction, pending] = useActionState<
     CreateKeyResult | null,
     FormData
@@ -22,6 +23,7 @@ export function KeysClient({ initialKeys }: Props) {
 
   const active = initialKeys.filter((k) => !k.revoked_at);
   const revoked = initialKeys.filter((k) => k.revoked_at);
+  const freeLimitReached = !hasPurchased && active.length >= 1;
 
   return (
     <>
@@ -46,6 +48,17 @@ export function KeysClient({ initialKeys }: Props) {
             </p>
           </div>
         </div>
+        {freeLimitReached && (
+          <div className="mb-[14px] flex items-center justify-between gap-3 rounded-xs border border-[#fed7aa] bg-[#fff7ed] px-3 py-[10px] text-[13px] leading-[1.5] text-[#9a3412]">
+            <span>
+              Free accounts are limited to one API key. Buy a bundle to unlock
+              additional keys.
+            </span>
+            <Link href="/dashboard/billing" className="btn btn-ghost h-8">
+              Buy credits
+            </Link>
+          </div>
+        )}
         {state && !state.ok && (
           <div className="mb-[14px] rounded-xs border border-[#fecaca] bg-[#fef2f2] px-3 py-[10px] text-[13px] leading-[1.5] text-[#b91c1c]">
             {state.error}
@@ -57,9 +70,14 @@ export function KeysClient({ initialKeys }: Props) {
             placeholder="e.g. Production"
             maxLength={80}
             required
-            className="h-10 flex-1 rounded-sm border border-border-strong bg-surface px-3 text-[14px] text-text"
+            disabled={freeLimitReached}
+            className="h-10 flex-1 rounded-sm border border-border-strong bg-surface px-3 text-[14px] text-text disabled:cursor-not-allowed disabled:bg-bg-alt disabled:text-text-3"
           />
-          <button type="submit" className="btn btn-primary" disabled={pending}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={pending || freeLimitReached}
+          >
             {pending ? "Creating…" : "Create key"}
           </button>
         </form>
