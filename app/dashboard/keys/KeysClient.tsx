@@ -69,7 +69,7 @@ export function KeysClient({ initialKeys }: Props) {
           {revoked.map((k) => (
             <div
               key={k.id}
-              className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 border-t border-border py-[14px] first:border-t-0"
+              className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-t border-border py-[14px] first:border-t-0"
             >
               <div>
                 <div className="font-medium text-text-3">{k.name}</div>
@@ -77,9 +77,6 @@ export function KeysClient({ initialKeys }: Props) {
                   {k.prefix}…
                 </div>
               </div>
-              <span className="rounded-full bg-bg-alt px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] text-text-3">
-                {k.tier}
-              </span>
               <span className="text-[12px] italic text-text-3">
                 revoked {new Date(k.revoked_at as string).toLocaleDateString()}
               </span>
@@ -120,7 +117,7 @@ function KeyRow({ row }: { row: ApiKeyRow }) {
   };
 
   return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 border-t border-border py-[14px] first:border-t-0">
+    <div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-t border-border py-[14px] first:border-t-0">
       <div>
         <div className="font-medium">{row.name}</div>
         <div className="font-mono text-[12px] text-text-2">
@@ -130,9 +127,6 @@ function KeyRow({ row }: { row: ApiKeyRow }) {
           )}
         </div>
       </div>
-      <span className="rounded-full bg-accent-soft px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] text-accent">
-        {row.tier}
-      </span>
       <span className="font-mono text-[12px] text-text-2">
         Created {new Date(row.created_at).toLocaleDateString()}
       </span>

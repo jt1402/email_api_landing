@@ -125,7 +125,7 @@ export default async function DashboardOverview() {
             {activeKeys.slice(0, 3).map((k) => (
               <div
                 key={k.id}
-                className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 border-t border-border py-[14px] first:border-t-0"
+                className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-t border-border py-[14px] first:border-t-0"
               >
                 <div>
                   <div className="font-medium">{k.name}</div>
@@ -133,7 +133,6 @@ export default async function DashboardOverview() {
                     {k.prefix}…
                   </div>
                 </div>
-                <KeyTier>{k.tier}</KeyTier>
                 <span className="font-mono text-[12px] text-text-2">
                   Created {new Date(k.created_at).toLocaleDateString()}
                 </span>
@@ -202,14 +201,6 @@ function Empty({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-function KeyTier({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full bg-accent-soft px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] text-accent">
-      {children}
-    </span>
-  );
-}
-
 function RecTag({ rec }: { rec: string }) {
   let cls = "bg-accent-soft text-accent";
   if (rec === "block") cls = "bg-[#fef2f2] text-risk";

@@ -18,7 +18,6 @@ export type User = {
 export type ApiKeyRow = {
   id: number;
   name: string;
-  tier: string;
   prefix: string;
   created_at: string;
   last_used_at: string | null;
@@ -28,7 +27,6 @@ export type ApiKeyRow = {
 export type CreatedKey = {
   id: number;
   name: string;
-  tier: string;
   prefix: string;
   key: string; // raw secret — show once
 };
