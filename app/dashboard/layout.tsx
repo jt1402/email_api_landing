@@ -31,6 +31,7 @@ export default async function DashboardLayout({
         </div>
         <nav className="flex flex-1 flex-col gap-[2px]">
           <DashNavLink href="/dashboard">Overview</DashNavLink>
+          <DashNavLink href="/dashboard/playground">Playground</DashNavLink>
           <DashNavLink href="/dashboard/keys">API keys</DashNavLink>
           <DashNavLink href="/dashboard/usage">Usage</DashNavLink>
           <DashNavLink href="/dashboard/billing">Billing</DashNavLink>

@@ -52,6 +52,78 @@ export type RecentCheck = {
   checked_at: string;
 };
 
+export type Signal = {
+  name: string;
+  category: string;
+  direction: "risk" | "trust";
+  weight: number;
+  description: string;
+};
+
+export type CheckStep = {
+  name: string;
+  status: string;
+  duration_ms: number;
+  result: string | null;
+  probe_detail?: string | null;
+};
+
+export type CheckResponse = {
+  meta: {
+    request_id: string;
+    email: string;
+    domain: string;
+    checked_at: string;
+    latency_ms: number;
+    model_phase: string;
+    model_version: string;
+    path_taken: string;
+    cached: boolean;
+    cache_age_seconds: number | null;
+  };
+  verdict: {
+    recommendation: "allow" | "allow_with_flag" | "verify_manually" | "block";
+    risk_level: "low" | "medium" | "high" | "critical";
+    disposable: boolean;
+    catch_all: boolean | null;
+    catch_all_checked: boolean;
+    valid_address: boolean;
+    safe_to_send: boolean;
+    summary: string;
+  };
+  score: {
+    value: number;
+    confidence: number;
+    confidence_level: "high" | "medium" | "low";
+    components: {
+      strong_signals: number;
+      corroborating: number;
+      trust_adjustments: number;
+      compounding_bonus: number;
+      final_clamped: number;
+    };
+    thresholds: {
+      block_at: number;
+      flag_at: number;
+      your_profile: "strict" | "balanced" | "permissive";
+    };
+  };
+  signals: {
+    fired: Signal[];
+    trust_signals: Signal[];
+    compounding: {
+      applied: boolean;
+      signal_count: number;
+      bonus_applied: number;
+      explanation: string;
+    };
+  };
+  checks: {
+    run: CheckStep[];
+    path_explanation: string;
+  };
+};
+
 type BackendError = { code: string; http_status: number; message: string };
 
 export class BackendCallError extends Error {
@@ -139,6 +211,21 @@ export const usage = {
   recent: (session: string, limit = 20) =>
     call<{ items: RecentCheck[] }>(`/v1/usage/recent?limit=${limit}`, {
       session,
+    }),
+};
+
+export const checks = {
+  preview: (
+    session: string,
+    body: { email: string; risk_profile?: string }
+  ) =>
+    call<CheckResponse>("/v1/check/preview", {
+      method: "POST",
+      session,
+      headers: body.risk_profile
+        ? { "X-Risk-Profile": body.risk_profile }
+        : undefined,
+      body: JSON.stringify({ email: body.email }),
     }),
 };
 

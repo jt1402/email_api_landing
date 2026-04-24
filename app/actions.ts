@@ -11,10 +11,21 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { auth, billing, keys, BackendCallError, type BundleId } from "@/lib/backend";
+import {
+  auth,
+  billing,
+  checks,
+  keys,
+  BackendCallError,
+  type BundleId,
+  type CheckResponse,
+} from "@/lib/backend";
 import { clearSession, getSession, setSession } from "@/lib/session";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
+export type CheckResult =
+  | { ok: true; data: CheckResponse }
+  | { ok: false; error: string };
 
 function errMessage(err: unknown, fallback: string): string {
   if (err instanceof BackendCallError) return err.message;
@@ -106,6 +117,28 @@ export async function buyBundleAction(formData: FormData): Promise<void> {
   if (bundle !== "10k" && bundle !== "50k" && bundle !== "250k") return;
   const { url } = await billing.checkout(token!, bundle);
   redirect(url);
+}
+
+export async function runPlaygroundCheckAction(
+  _prev: CheckResult | null,
+  formData: FormData
+): Promise<CheckResult> {
+  const token = await getSession();
+  if (!token) return { ok: false, error: "Not signed in." };
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { ok: false, error: "Enter an email to check." };
+  const profile = String(formData.get("risk_profile") ?? "").trim();
+  try {
+    const data = await checks.preview(token, {
+      email,
+      risk_profile: profile || undefined,
+    });
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/billing");
+    return { ok: true, data };
+  } catch (err) {
+    return { ok: false, error: errMessage(err, "Could not run the check.") };
+  }
 }
 
 export async function revokeKeyAction(formData: FormData): Promise<void> {
