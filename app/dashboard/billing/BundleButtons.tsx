@@ -12,7 +12,7 @@ type Bundle = {
 };
 
 const bundles: Bundle[] = [
-  { id: "10k", checks: "10,000", price: "$25", effective: "$0.0025", save: "17%" },
+  { id: "10k", checks: "10,000", price: "$25", effective: "$0.0025" },
   { id: "25k", checks: "25,000", price: "$55", effective: "$0.0022", save: "27%" },
   { id: "50k", checks: "50,000", price: "$95", effective: "$0.0019", save: "37%" },
   { id: "100k", checks: "100,000", price: "$170", effective: "$0.0017", save: "43%" },
