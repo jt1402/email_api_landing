@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
-import { auth, BackendCallError } from "@/lib/backend";
+import { auth, billing, BackendCallError } from "@/lib/backend";
 import { getSession } from "@/lib/session";
 import { logoutAction } from "@/app/actions";
+
+const LOW_BALANCE_THRESHOLD = 500;
 
 export default async function DashboardLayout({
   children,
@@ -14,14 +16,22 @@ export default async function DashboardLayout({
   if (!token) redirect("/login");
 
   let user;
+  let balance: { credit_balance_checks: number } | null = null;
   try {
-    user = await auth.me(token);
+    [user, balance] = await Promise.all([
+      auth.me(token),
+      billing.balance(token).catch(() => null),
+    ]);
   } catch (err) {
     if (err instanceof BackendCallError && err.status === 401) {
       redirect("/login");
     }
     throw err;
   }
+
+  const credits = balance?.credit_balance_checks ?? null;
+  const isOut = credits !== null && credits <= 0;
+  const isLow = credits !== null && credits > 0 && credits < LOW_BALANCE_THRESHOLD;
 
   return (
     <div className="grid min-h-dvh grid-cols-[240px_1fr] bg-bg-alt max-[820px]:grid-cols-1">
@@ -48,8 +58,47 @@ export default async function DashboardLayout({
         </div>
       </aside>
       <main className="max-w-[1100px] p-10 px-12 max-[820px]:p-8 max-[820px]:px-6">
+        {(isOut || isLow) && credits !== null && (
+          <BalanceBanner credits={credits} critical={isOut} />
+        )}
         {children}
       </main>
+    </div>
+  );
+}
+
+function BalanceBanner({
+  credits,
+  critical,
+}: {
+  credits: number;
+  critical: boolean;
+}) {
+  const styles = critical
+    ? "border-[#fecaca] bg-[#fef2f2] text-[#b91c1c]"
+    : "border-[#fed7aa] bg-[#fff7ed] text-[#9a3412]";
+  return (
+    <div
+      className={`mb-6 flex items-center justify-between gap-4 rounded-sm border px-4 py-3 text-[14px] leading-[1.5] ${styles} max-[700px]:flex-col max-[700px]:items-start`}
+    >
+      <div>
+        {critical ? (
+          <>
+            <strong>Out of credits.</strong> API calls return{" "}
+            <span className="font-mono">402 quota_exceeded</span> until you top
+            up.
+          </>
+        ) : (
+          <>
+            <strong>Running low.</strong> {credits.toLocaleString()} credit
+            {credits === 1 ? "" : "s"} left — top up to keep verifying without
+            interruption.
+          </>
+        )}
+      </div>
+      <Link href="/dashboard/billing" className="btn btn-primary h-9 shrink-0">
+        Buy credits
+      </Link>
     </div>
   );
 }
