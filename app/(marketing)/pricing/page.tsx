@@ -23,12 +23,12 @@ export default function PricingPage() {
         <div className="container-page">
           <div className="grid grid-cols-3 items-stretch gap-5 max-[820px]:grid-cols-1">
             <PriceCard
-              name="Free"
-              value="$0"
-              unit="forever"
+              name="Free trial"
+              value="100"
+              unit="checks on signup"
               desc="Kick the tires. No credit card required."
               items={[
-                "100 checks on signup",
+                "One-time credit — no expiry",
                 "Full signal array in every response",
                 "1 API key",
                 "Community support",
