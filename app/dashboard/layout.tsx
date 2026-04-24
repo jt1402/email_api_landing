@@ -5,7 +5,7 @@ import { auth, billing, BackendCallError } from "@/lib/backend";
 import { getSession } from "@/lib/session";
 import { logoutAction } from "@/app/actions";
 
-const LOW_BALANCE_THRESHOLD = 500;
+const LOW_BALANCE_THRESHOLD = 50;
 
 export default async function DashboardLayout({
   children,
