@@ -2,16 +2,25 @@
 
 import { useEffect, useState } from "react";
 
-const items = [
+type TocItem = { id: string; label: string; group?: string };
+
+const items: TocItem[] = [
+  { id: "introduction", label: "Introduction", group: "Getting Started" },
   { id: "quickstart", label: "Quickstart" },
-  { id: "auth", label: "Authentication" },
-  { id: "check", label: "The /check endpoint" },
-  { id: "response", label: "Response schema" },
-  { id: "recommendation", label: "Recommendation" },
-  { id: "signals", label: "Signals" },
-  { id: "latency", label: "Latency" },
+  { id: "authentication", label: "Authentication" },
+  { id: "rate-limits", label: "Rate limits" },
+  { id: "check", label: "POST /v1/check", group: "API Reference" },
+  { id: "report", label: "POST /v1/report" },
+  { id: "usage", label: "GET /v1/usage" },
+  { id: "schema", label: "The 5-block structure", group: "Response Schema" },
+  { id: "recommendations", label: "Recommendation values" },
+  { id: "risk-profiles", label: "Risk profiles", group: "Core Concepts" },
+  { id: "catch-all", label: "Catch-all detection" },
+  { id: "signals-ref", label: "Signals reference" },
+  { id: "sdks", label: "SDKs", group: "SDKs" },
+  { id: "webhooks", label: "Webhooks", group: "Advanced" },
   { id: "errors", label: "Errors" },
-  { id: "sdks", label: "SDKs" },
+  { id: "versioning", label: "Versioning" },
 ];
 
 export function DocsToc() {
@@ -49,15 +58,20 @@ export function DocsToc() {
   }, []);
 
   return (
-    <aside className="sticky top-[88px] text-[13px]" aria-label="On this page">
-      <div className="mb-[14px] font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-text-3">
-        On this page
-      </div>
-      <ul className="flex flex-col gap-[2px] border-l border-border list-none p-0 m-0">
+    <aside
+      className="sticky top-[88px] max-h-[calc(100vh-100px)] overflow-y-auto pr-2 text-[13px]"
+      aria-label="On this page"
+    >
+      <ul className="m-0 flex list-none flex-col gap-[2px] border-l border-border p-0">
         {items.map((i) => {
           const isActive = active === i.id;
           return (
             <li key={i.id}>
+              {i.group && (
+                <div className="mt-5 mb-2 pl-[14px] font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-text-3 first:mt-0">
+                  {i.group}
+                </div>
+              )}
               <a
                 href={`#${i.id}`}
                 aria-current={isActive ? "location" : undefined}

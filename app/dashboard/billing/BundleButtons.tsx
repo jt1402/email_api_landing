@@ -4,31 +4,31 @@ import { useTransition } from "react";
 import { buyBundleAction } from "@/app/actions";
 
 type Bundle = {
-  id: "10k" | "50k" | "250k";
+  id: "10k" | "25k" | "50k" | "100k";
   checks: string;
   price: string;
   effective: string;
   save?: string;
-  featured?: boolean;
 };
 
 const bundles: Bundle[] = [
-  { id: "10k", checks: "10,000", price: "$25", effective: "$0.0025" },
-  { id: "50k", checks: "50,000", price: "$99", effective: "$0.00198", save: "34%", featured: true },
-  { id: "250k", checks: "250,000", price: "$399", effective: "$0.0016", save: "47%" },
+  { id: "10k", checks: "10,000", price: "$25", effective: "$0.0025", save: "17%" },
+  { id: "25k", checks: "25,000", price: "$55", effective: "$0.0022", save: "27%" },
+  { id: "50k", checks: "50,000", price: "$95", effective: "$0.0019", save: "37%" },
+  { id: "100k", checks: "100,000", price: "$170", effective: "$0.0017", save: "43%" },
 ];
 
 export function BundleButtons() {
   return (
-    <div className="grid grid-cols-3 gap-4 max-[820px]:grid-cols-1">
-      {bundles.map((b) => (
-        <BundleCard key={b.id} bundle={b} />
+    <div className="overflow-hidden rounded-md border border-border bg-surface">
+      {bundles.map((b, i) => (
+        <BundleRow key={b.id} bundle={b} last={i === bundles.length - 1} />
       ))}
     </div>
   );
 }
 
-function BundleCard({ bundle }: { bundle: Bundle }) {
+function BundleRow({ bundle, last }: { bundle: Bundle; last: boolean }) {
   const [isPending, startTransition] = useTransition();
   return (
     <form
@@ -38,35 +38,29 @@ function BundleCard({ bundle }: { bundle: Bundle }) {
           buyBundleAction(fd);
         });
       }}
-      className={`flex flex-col rounded-md border p-6 text-center transition-transform ${
-        bundle.featured
-          ? "border-accent bg-accent-soft"
-          : "border-border bg-surface hover:-translate-y-0.5 hover:shadow-md"
+      className={`grid grid-cols-[1.6fr_0.9fr_1.3fr_1fr_auto] items-center gap-5 px-7 py-5 transition-colors hover:bg-bg-alt max-[720px]:grid-cols-[1fr_1fr] max-[720px]:gap-2 ${
+        last ? "" : "border-b border-border"
       }`}
     >
-      <div className="mb-3 font-mono text-[12px] uppercase tracking-[0.12em] text-text-2">
+      <div className="font-medium tabular-nums max-[720px]:col-span-2 max-[720px]:text-[15px] max-[720px]:font-semibold">
         {bundle.checks} checks
       </div>
-      <div className="mb-[6px] text-[32px] font-semibold tracking-[-0.02em] text-text">
+      <div className="text-[20px] font-semibold tabular-nums tracking-[-0.02em]">
         {bundle.price}
       </div>
-      <div className="text-[13px] text-text-2">
-        <span className="font-mono">{bundle.effective}</span> / check
+      <div className="font-mono text-[14px] tabular-nums text-text-2">
+        {bundle.effective} / check
       </div>
-      <div className="mt-auto pt-4">
-        {bundle.save && (
-          <div className="mb-4 inline-block rounded-full bg-ok px-[10px] py-[3px] font-mono text-[11px] font-medium tracking-[0.06em] text-white">
-            Save {bundle.save}
-          </div>
-        )}
-        <button
-          type="submit"
-          disabled={isPending}
-          className={`btn btn-block ${bundle.featured ? "btn-primary" : "btn-ghost"}`}
-        >
-          {isPending ? "Redirecting…" : "Buy bundle"}
-        </button>
+      <div className="text-[14px] font-medium text-ok">
+        {bundle.save && `Save ${bundle.save}`}
       </div>
+      <button
+        type="submit"
+        disabled={isPending}
+        className="btn btn-primary max-[720px]:col-span-2 max-[720px]:mt-2 max-[720px]:w-full"
+      >
+        {isPending ? "Redirecting…" : "Buy now"}
+      </button>
     </form>
   );
 }

@@ -229,7 +229,7 @@ export const checks = {
     }),
 };
 
-export type BundleId = "10k" | "50k" | "250k";
+export type BundleId = "10k" | "25k" | "50k" | "100k";
 
 export const billing = {
   balance: (session: string) =>
