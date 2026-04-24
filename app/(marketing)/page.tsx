@@ -20,7 +20,7 @@ export default function LandingPage() {
               Get 100 checks for free →
             </Link>
             <span className="text-[13px] text-text-3">
-              No credit card · $0.003/check after · p99 under 28ms
+              No credit card · Credits never expire · p99 under 28ms
             </span>
           </div>
         </div>
@@ -107,7 +107,7 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-3 gap-6 max-[820px]:grid-cols-1">
             <Step num="01" title="Sign up" icon={<IconUser />}>
-              Get 100 free checks on signup. Then $0.003/check or save with credit bundles. No card required.
+              Get 100 free checks on signup. Then buy credits — bundles from $0.0016/check. No subscriptions, no monthly minimums.
             </Step>
             <Step num="02" title="Call our API" icon={<IconBolt />}>
               Send a single HTTP request with the email. Get back a confidence-scored risk verdict in under 100ms.

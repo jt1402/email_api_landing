@@ -13,8 +13,8 @@ export default function PricingPage() {
             <span className="text-accent">Pay for what you use.</span>
           </h1>
           <p className="mx-auto mt-6 mb-8 max-w-[580px] text-[18px] leading-[1.55] text-text-2 text-pretty">
-            100 checks free on signup. Then $0.003 per check, or save up to 33% with prepaid credit bundles.
-            No seats, no minimums, no credit card to start.
+            100 checks free on signup. Then buy credits in bundles — from $0.0025 per check.
+            No subscriptions, no seats, no monthly minimums. Credits never expire.
           </p>
         </div>
       </section>
@@ -37,13 +37,13 @@ export default function PricingPage() {
             />
             <PriceCard
               featured
-              name="Pay as you go"
-              value="$0.003"
+              name="Credits"
+              value="$0.0025"
               unit="/ check"
-              desc="Unlimited volume. Billed monthly for what you used."
+              desc="Buy credits in bundles. Use them as you go, credits never expire."
               items={[
                 "Everything in Free",
-                "Unlimited checks",
+                "Unlimited volume",
                 "Catch-all detection",
                 "Unlimited API keys",
                 "99.9% uptime SLA",
@@ -110,17 +110,18 @@ export default function PricingPage() {
               No. Prepaid credits stay on your account until you use them. Pay-as-you-go overages
               roll into your next invoice.
             </Faq>
-            <Faq q="Can I mix PAYG and bundles?">
-              Yes. Credits are drawn down first. Once they run out you fall back to the pay-as-you-go rate
-              automatically — no service interruption.
+            <Faq q="What happens when I run out of credits?">
+              The API returns a <span className="font-mono">402 quota_exceeded</span> error with a
+              link to your billing page. Buy another bundle and credits stack on top instantly —
+              there&apos;s no subscription to renew, no prorations, no surprises.
             </Faq>
             <Faq q="How fast is the API?">
               85% of traffic resolves from in-memory cache in under 5ms. Weighted p99 is under 28ms.
               Deep checks run async so your signup flow never blocks.
             </Faq>
             <Faq q="Is there a free tier forever?">
-              The 100-check signup credit is one-time. For ongoing low-volume use, pay-as-you-go starts
-              at $0.003 with no monthly minimum.
+              The 100-check signup credit is one-time. For ongoing use, start with the 10K bundle
+              at $25 — no subscription, no monthly minimum, and credits carry over until you use them.
             </Faq>
           </div>
         </div>

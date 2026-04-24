@@ -19,7 +19,7 @@ export default function DocsPage() {
                   <li>
                     <strong>Sign up.</strong>{" "}
                     Get <DocsLink href="/signup">100 checks free</DocsLink> on signup.
-                    Then $0.003/check or save with credit bundles. No card required.
+                    Then buy credits in bundles — from $0.0025/check, no subscriptions.
                   </li>
                   <li>
                     <strong>Call our API.</strong>{" "}
