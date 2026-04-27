@@ -4,6 +4,7 @@ import { Logo } from "@/components/Logo";
 import { auth, billing, BackendCallError } from "@/lib/backend";
 import { getSession } from "@/lib/session";
 import { logoutAction } from "@/app/actions";
+import { WelcomeKeyBanner } from "./WelcomeKeyBanner";
 
 const LOW_BALANCE_THRESHOLD = 50;
 
@@ -58,6 +59,7 @@ export default async function DashboardLayout({
         </div>
       </aside>
       <main className="max-w-[1100px] p-10 px-12 max-[820px]:p-8 max-[820px]:px-6">
+        <WelcomeKeyBanner />
         {(isOut || isLow) && credits !== null && (
           <BalanceBanner credits={credits} critical={isOut} />
         )}

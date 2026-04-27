@@ -183,10 +183,15 @@ export const auth = {
       body: JSON.stringify({ email }),
     }),
   verify: (token: string) =>
-    call<{ session_token: string; expires_at: string; user: User }>(
-      "/v1/auth/verify",
-      { method: "POST", body: JSON.stringify({ token }) }
-    ),
+    call<{
+      session_token: string;
+      expires_at: string;
+      user: User;
+      default_api_key: string | null;
+    }>("/v1/auth/verify", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
   logout: (session: string) =>
     call<{ ok: boolean }>("/v1/auth/logout", { method: "POST", session }),
   me: (session: string) => call<User>("/v1/auth/me", { session }),

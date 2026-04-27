@@ -33,6 +33,15 @@ function VerifyInner() {
     (async () => {
       const result = await verifyTokenAction(token);
       if (result.ok) {
+        if (result.defaultApiKey) {
+          // Stash the auto-provisioned secret so the dashboard can render the
+          // show-once banner. Cleared by the dashboard component after copy.
+          try {
+            sessionStorage.setItem("vm_default_api_key", result.defaultApiKey);
+          } catch {
+            /* sessionStorage unavailable — user just won't see the banner */
+          }
+        }
         setState({ kind: "success" });
         router.replace("/dashboard");
       } else {

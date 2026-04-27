@@ -24,6 +24,9 @@ import {
 import { clearSession, getSession, setSession } from "@/lib/session";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
+export type VerifyActionResult =
+  | { ok: true; defaultApiKey: string | null }
+  | { ok: false; error: string };
 export type CheckResult =
   | { ok: true; data: CheckResponse }
   | { ok: false; error: string };
@@ -70,12 +73,14 @@ export async function loginAction(
  * can show inline errors for expired links; redirects to /dashboard on
  * success (from the client after await).
  */
-export async function verifyTokenAction(token: string): Promise<ActionResult> {
+export async function verifyTokenAction(
+  token: string
+): Promise<VerifyActionResult> {
   if (!token) return { ok: false, error: "Missing token." };
   try {
     const result = await auth.verify(token);
     await setSession(result.session_token);
-    return { ok: true };
+    return { ok: true, defaultApiKey: result.default_api_key };
   } catch (err) {
     return {
       ok: false,
