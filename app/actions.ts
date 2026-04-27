@@ -151,7 +151,14 @@ export async function buyBundleAction(formData: FormData): Promise<void> {
   const token = await getSession();
   if (!token) redirect("/login");
   const bundle = String(formData.get("bundle") ?? "") as BundleId;
-  if (bundle !== "10k" && bundle !== "25k" && bundle !== "50k" && bundle !== "100k") return;
+  if (
+    bundle !== "5k" &&
+    bundle !== "10k" &&
+    bundle !== "25k" &&
+    bundle !== "50k" &&
+    bundle !== "100k"
+  )
+    return;
   const { url } = await billing.checkout(token!, bundle);
   redirect(url);
 }

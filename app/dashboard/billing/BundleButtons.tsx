@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { buyBundleAction } from "@/app/actions";
 
 type Bundle = {
-  id: "10k" | "25k" | "50k" | "100k";
+  id: "5k" | "10k" | "25k" | "50k" | "100k";
   checks: string;
   price: string;
   effective: string;
@@ -12,7 +12,8 @@ type Bundle = {
 };
 
 const bundles: Bundle[] = [
-  { id: "10k", checks: "10,000", price: "$25", effective: "$0.0025" },
+  { id: "5k", checks: "5,000", price: "$15", effective: "$0.0030" },
+  { id: "10k", checks: "10,000", price: "$25", effective: "$0.0025", save: "17%" },
   { id: "25k", checks: "25,000", price: "$55", effective: "$0.0022", save: "27%" },
   { id: "50k", checks: "50,000", price: "$95", effective: "$0.0019", save: "37%" },
   { id: "100k", checks: "100,000", price: "$170", effective: "$0.0017", save: "43%" },

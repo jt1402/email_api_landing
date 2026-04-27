@@ -22,7 +22,8 @@ export default function PricingPage() {
       <section className="pb-20 pt-2">
         <div className="container-page">
           <div className="mx-auto max-w-[880px] overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
-            <PriceRow checks="10,000" price="$25" rate="$0.0025 / check" />
+            <PriceRow checks="5,000" price="$15" rate="$0.0030 / check" />
+            <PriceRow checks="10,000" price="$25" rate="$0.0025 / check" save="Save 17%" />
             <PriceRow checks="25,000" price="$55" rate="$0.0022 / check" save="Save 27%" />
             <PriceRow checks="50,000" price="$95" rate="$0.0019 / check" save="Save 37%" />
             <PriceRow checks="100,000" price="$170" rate="$0.0017 / check" save="Save 43%" />
