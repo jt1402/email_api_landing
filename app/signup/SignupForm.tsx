@@ -4,12 +4,30 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { signupAction, type ActionResult } from "@/app/actions";
 import { Logo } from "@/components/Logo";
+import { OAuthButtons } from "@/components/OAuthButtons";
 
-export function SignupForm() {
+type Props = {
+  googleAuthUrl: string;
+  githubAuthUrl: string;
+  oauthError?: string;
+};
+
+const OAUTH_ERROR_COPY: Record<string, string> = {
+  access_denied: "You cancelled the sign-in. Try again to continue.",
+  state_mismatch: "Sign-in link expired or was tampered with. Please try again.",
+  token_exchange_failed: "We couldn't complete sign-in with that provider. Try again.",
+  email_unavailable: "We couldn't read a verified email from that account.",
+  provider_unavailable: "That sign-in provider isn't configured right now.",
+};
+
+export function SignupForm({ googleAuthUrl, githubAuthUrl, oauthError }: Props) {
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(
     signupAction,
     null,
   );
+  const oauthErrorMessage = oauthError
+    ? OAUTH_ERROR_COPY[oauthError] ?? "Sign-in failed. Please try again."
+    : null;
 
   return (
     <div className="grid min-h-dvh place-items-center bg-bg px-6 py-12 [background:radial-gradient(60%_50%_at_50%_0%,rgba(46,111,158,0.08),transparent_60%),var(--color-bg)]">
@@ -36,9 +54,18 @@ export function SignupForm() {
               Create your account
             </h1>
             <p className="mb-7 text-[15px] leading-[1.55] text-text-2">
-              Enter your email to get started. No password needed — we&apos;ll send
-              you a magic link. 100 free checks included.
+              100 free checks included. Continue with Google or GitHub, or get
+              a magic link by email.
             </p>
+            {oauthErrorMessage && (
+              <div className="mb-[14px] rounded-xs border border-[#fecaca] bg-[#fef2f2] px-3 py-[10px] text-[13px] leading-[1.5] text-[#b91c1c]">
+                {oauthErrorMessage}
+              </div>
+            )}
+            <OAuthButtons
+              googleAuthUrl={googleAuthUrl}
+              githubAuthUrl={githubAuthUrl}
+            />
             {state && !state.ok && (
               <div className="mb-[14px] rounded-xs border border-[#fecaca] bg-[#fef2f2] px-3 py-[10px] text-[13px] leading-[1.5] text-[#b91c1c]">
                 {state.error}

@@ -170,6 +170,15 @@ async function call<T>(
   return (await res.json()) as T;
 }
 
+// ── OAuth — server-side exchange after the provider redirect ──────────
+export const oauth = {
+  exchange: (code: string) =>
+    call<{ session_token: string; default_api_key: string | null }>(
+      "/v1/auth/oauth/exchange",
+      { method: "POST", body: JSON.stringify({ code }) }
+    ),
+};
+
 // ── Public auth endpoints ──────────────────────────────────────────────
 export const auth = {
   signup: (email: string) =>

@@ -3,7 +3,13 @@ import { auth, BackendCallError } from "@/lib/backend";
 import { getSession, clearSession } from "@/lib/session";
 import { SignupForm } from "./SignupForm";
 
-export default async function SignupPage() {
+const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
+
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ oauth_error?: string }>;
+}) {
   const token = await getSession();
   let signedIn = false;
   if (token) {
@@ -19,5 +25,12 @@ export default async function SignupPage() {
     }
   }
   if (signedIn) redirect("/dashboard");
-  return <SignupForm />;
+  const { oauth_error } = await searchParams;
+  return (
+    <SignupForm
+      googleAuthUrl={`${BACKEND}/v1/auth/oauth/google/start`}
+      githubAuthUrl={`${BACKEND}/v1/auth/oauth/github/start`}
+      oauthError={oauth_error}
+    />
+  );
 }

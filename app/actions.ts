@@ -16,6 +16,7 @@ import {
   billing,
   checks,
   keys,
+  oauth,
   BackendCallError,
   type BundleId,
   type CheckResponse,
@@ -85,6 +86,27 @@ export async function verifyTokenAction(
     return {
       ok: false,
       error: errMessage(err, "Link is invalid or expired."),
+    };
+  }
+}
+
+/**
+ * Consumed by /auth/oauth/exchange. Swaps the one-time code the backend put
+ * in the redirect URL for a session token (stored in our httpOnly cookie)
+ * and the raw default API key (stashed in sessionStorage from the page).
+ */
+export async function oauthExchangeAction(
+  code: string
+): Promise<VerifyActionResult> {
+  if (!code) return { ok: false, error: "Missing code." };
+  try {
+    const result = await oauth.exchange(code);
+    await setSession(result.session_token);
+    return { ok: true, defaultApiKey: result.default_api_key };
+  } catch (err) {
+    return {
+      ok: false,
+      error: errMessage(err, "Sign-in failed. Please try again."),
     };
   }
 }
