@@ -59,10 +59,10 @@ export default function TermsPage() {
 
           <H2>4. Credits, billing, and refunds</H2>
           <P>
-            Credits are one-time prepaid purchases processed by Polar (our merchant
-            of record); the metered plan is a recurring subscription invoiced monthly.
-            Credits never expire. Per-check consumption is detailed in the{" "}
-            <A href="/pricing">pricing page</A> and <A href="/docs">docs</A>.
+            Credits are one-time prepaid purchases processed by Polar (our
+            merchant of record). Credits never expire. Per-check consumption
+            is detailed in the <A href="/pricing">pricing page</A> and{" "}
+            <A href="/docs">docs</A>.
           </P>
           <List>
             <li><strong>Free credits:</strong> new accounts receive 100 free checks on signup. The free grant is one-time per customer.</li>

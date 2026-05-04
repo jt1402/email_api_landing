@@ -17,10 +17,7 @@ export default async function DashboardLayout({
   if (!token) redirect("/login");
 
   let user;
-  let balance: {
-    credit_balance_checks: number;
-    billing_mode: "bundles" | "metered";
-  } | null = null;
+  let balance: { credit_balance_checks: number } | null = null;
   try {
     [user, balance] = await Promise.all([
       auth.me(token),
@@ -34,11 +31,8 @@ export default async function DashboardLayout({
   }
 
   const credits = balance?.credit_balance_checks ?? null;
-  // Suppress the low/out-of-credits banner on metered: there's no quota gate,
-  // each check is invoiced via Polar regardless of credit balance.
-  const isMetered = balance?.billing_mode === "metered";
-  const isOut = !isMetered && credits !== null && credits <= 0;
-  const isLow = !isMetered && credits !== null && credits > 0 && credits < LOW_BALANCE_THRESHOLD;
+  const isOut = credits !== null && credits <= 0;
+  const isLow = credits !== null && credits > 0 && credits < LOW_BALANCE_THRESHOLD;
 
   return (
     <div className="grid min-h-dvh grid-cols-[240px_1fr] bg-bg-alt max-[820px]:grid-cols-1">

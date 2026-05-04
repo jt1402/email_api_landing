@@ -244,39 +244,17 @@ export const checks = {
 };
 
 export type BundleId = "5k" | "10k" | "25k" | "50k" | "100k";
-export type BillingMode = "bundles" | "metered";
-
-export type UsageSnapshot = {
-  available: boolean;
-  events: number;
-  amount_cents: number;
-  period_start: string | null;
-  period_end: string | null;
-};
 
 export const billing = {
   balance: (session: string) =>
     call<{
       credit_balance_checks: number;
       has_purchased: boolean;
-      billing_mode: BillingMode;
     }>("/v1/billing/balance", { session }),
-  usage: (session: string) =>
-    call<UsageSnapshot>("/v1/billing/usage", { session }),
   checkout: (session: string, bundle: BundleId) =>
     call<{ url: string }>("/v1/billing/checkout", {
       method: "POST",
       session,
       body: JSON.stringify({ bundle }),
-    }),
-  subscribe: (session: string) =>
-    call<{ url: string }>("/v1/billing/subscribe", {
-      method: "POST",
-      session,
-    }),
-  cancelSubscription: (session: string) =>
-    call<{ ok: true }>("/v1/billing/cancel-subscription", {
-      method: "POST",
-      session,
     }),
 };

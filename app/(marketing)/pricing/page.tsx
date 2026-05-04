@@ -14,9 +14,9 @@ export default function PricingPage() {
             <span className="text-accent">no subscriptions.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-[640px] text-[18px] leading-[1.55] text-text-2 text-pretty">
-            <span className="font-semibold text-accent">First 100 checks are free</span>, then{" "}
-            <span className="font-mono text-text">$0.003</span> per check or buy credits in
-            bundles and save up to 43%.
+            <span className="font-semibold text-accent">First 100 checks are free</span>. After
+            that, buy a credit bundle starting at <span className="font-mono text-text">$15</span>.
+            Credits never expire — save up to 43% on larger bundles.
           </p>
         </div>
       </section>
@@ -82,11 +82,6 @@ export default function PricingPage() {
               The API returns <code className="font-mono">402 quota_exceeded</code> with a clear error message and a
               link to your billing page. Buy another bundle and credits stack on top instantly — there&apos;s
               no subscription to renew, no prorations, no surprises.
-            </Faq>
-            <Faq q="Can I switch between metered and credits later?">
-              Yes. Switch any time from your dashboard. Unused credits stay in your account; they
-              are preserved while you&apos;re on the metered plan and become spendable again the
-              moment you cancel the subscription.
             </Faq>
             <Faq q="What payment methods do you accept?">
               Card via Polar (all major cards). Polar acts as our merchant of record and handles

@@ -142,8 +142,8 @@ export async function createKeyAction(
 }
 
 export async function refreshDashboardAction(): Promise<void> {
-  // Invalidate the whole /dashboard subtree so pages pick up fresh balance,
-  // has_purchased, and billing_mode after a Polar webhook lands.
+  // Invalidate the whole /dashboard subtree so pages pick up fresh balance
+  // and has_purchased state after a Polar webhook lands.
   revalidatePath("/dashboard", "layout");
 }
 
@@ -161,25 +161,6 @@ export async function buyBundleAction(formData: FormData): Promise<void> {
     return;
   const { url } = await billing.checkout(token!, bundle);
   redirect(url);
-}
-
-export async function subscribeMeteredAction(): Promise<void> {
-  const token = await getSession();
-  if (!token) redirect("/login");
-  const { url } = await billing.subscribe(token!);
-  redirect(url);
-}
-
-export async function cancelSubscriptionAction(): Promise<ActionResult> {
-  const token = await getSession();
-  if (!token) return { ok: false, error: "Not signed in." };
-  try {
-    await billing.cancelSubscription(token);
-    revalidatePath("/dashboard", "layout");
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: errMessage(err, "Could not cancel subscription.") };
-  }
 }
 
 export async function runPlaygroundCheckAction(
