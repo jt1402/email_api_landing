@@ -23,9 +23,10 @@ export function CancelSubscriptionButton() {
   return (
     <div className="flex flex-col gap-2 rounded-md border border-border bg-bg-alt px-4 py-3">
       <p className="text-[13px] leading-[1.5] text-text-2">
-        This cancels your metered subscription right away. Polar will invoice
-        the partial-period usage and your bundle credits become spendable
-        again. Continue?
+        We&apos;ll schedule the cancellation for the end of your current
+        billing period. You&apos;ll be invoiced for the metered usage
+        accumulated this period, then auto-revert to bundles. You keep
+        metered access until then. Continue?
       </p>
       <div className="flex gap-2">
         <button
@@ -44,7 +45,7 @@ export function CancelSubscriptionButton() {
           }
           className="btn btn-primary text-[13px]"
         >
-          {pending ? "Cancelling…" : "Yes, cancel"}
+          {pending ? "Scheduling…" : "Schedule cancellation"}
         </button>
         <button
           type="button"
