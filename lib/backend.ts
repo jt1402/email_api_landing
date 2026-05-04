@@ -264,4 +264,9 @@ export const billing = {
       method: "POST",
       session,
     }),
+  cancelSubscription: (session: string) =>
+    call<{ ok: true }>("/v1/billing/cancel-subscription", {
+      method: "POST",
+      session,
+    }),
 };

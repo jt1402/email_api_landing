@@ -170,6 +170,18 @@ export async function subscribeMeteredAction(): Promise<void> {
   redirect(url);
 }
 
+export async function cancelSubscriptionAction(): Promise<ActionResult> {
+  const token = await getSession();
+  if (!token) return { ok: false, error: "Not signed in." };
+  try {
+    await billing.cancelSubscription(token);
+    revalidatePath("/dashboard", "layout");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: errMessage(err, "Could not cancel subscription.") };
+  }
+}
+
 export async function runPlaygroundCheckAction(
   _prev: CheckResult | null,
   formData: FormData

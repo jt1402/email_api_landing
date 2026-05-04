@@ -2,6 +2,7 @@ import Link from "next/link";
 import { billing } from "@/lib/backend";
 import { getSession } from "@/lib/session";
 import { BundleButtons } from "./BundleButtons";
+import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
 import { MeteredCard } from "./MeteredCard";
 import { RefreshAfterCheckout } from "./RefreshAfterCheckout";
 
@@ -54,11 +55,13 @@ export default async function BillingPage({
               Pay-as-you-go &middot; $0.003 / check
             </div>
             <p className="mt-3 text-[14px] text-text-2">
-              You're on the metered plan. Each successful check is invoiced at
-              the end of the month. Cancel anytime from the customer portal.
-              Any remaining bundle credits ({balance.credit_balance_checks.toLocaleString()})
-              are preserved.
+              You&apos;re on the metered plan. Bundle credits ({balance.credit_balance_checks.toLocaleString()})
+              are spent first; once the balance hits zero, each successful
+              check is invoiced at the end of the billing cycle.
             </p>
+            <div className="mt-5">
+              <CancelSubscriptionButton />
+            </div>
           </>
         ) : (
           <>
