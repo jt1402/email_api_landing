@@ -142,8 +142,8 @@ export async function createKeyAction(
 }
 
 export async function refreshDashboardAction(): Promise<void> {
-  // Invalidate the whole /dashboard subtree so pages pick up fresh balance +
-  // has_purchased after an async event (Stripe webhook crediting a bundle).
+  // Invalidate the whole /dashboard subtree so pages pick up fresh balance,
+  // has_purchased, and billing_mode after a Polar webhook lands.
   revalidatePath("/dashboard", "layout");
 }
 
@@ -160,6 +160,13 @@ export async function buyBundleAction(formData: FormData): Promise<void> {
   )
     return;
   const { url } = await billing.checkout(token!, bundle);
+  redirect(url);
+}
+
+export async function subscribeMeteredAction(): Promise<void> {
+  const token = await getSession();
+  if (!token) redirect("/login");
+  const { url } = await billing.subscribe(token!);
   redirect(url);
 }
 

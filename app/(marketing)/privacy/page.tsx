@@ -32,7 +32,7 @@ export default function PrivacyPage() {
             <li>Email addresses submitted to <Code>/v1/check</Code> are processed in memory and <strong>not persisted</strong>.</li>
             <li>We store the <em>domain</em> portion of checked emails for aggregate analytics and auto-blocklist promotion.</li>
             <li>We never sell your data. We never use your data to train third-party models.</li>
-            <li>Payment info is handled by Stripe — we only store an opaque customer ID.</li>
+            <li>Payment info is handled by Polar (our merchant of record) — we only store an opaque customer ID.</li>
           </List>
 
           <H2>1. What we collect</H2>
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
           <H3>Account data</H3>
           <P>
             When you sign up we collect your email address, a hashed session
-            token, and a Stripe customer ID. We keep this as long as the
+            token, and a Polar customer ID. We keep this as long as the
             account exists.
           </P>
 
@@ -64,9 +64,11 @@ export default function PrivacyPage() {
           <H3>Payment data</H3>
           <P>
             Payment details (card number, billing address) are handled by{" "}
-            <A href="https://stripe.com/privacy">Stripe</A> and never touch our
-            servers. We store an opaque Stripe customer ID to look up your
-            subscription, purchase history, and receipts.
+            <A href="https://polar.sh/legal/privacy">Polar</A>, our merchant of
+            record. They process the transaction, calculate any sales tax / VAT,
+            and remit it to local authorities. We store an opaque Polar customer
+            ID to look up your subscription, purchase history, and receipts.
+            Card numbers never touch our servers.
           </P>
 
           <H3>Operational logs</H3>
@@ -92,7 +94,7 @@ export default function PrivacyPage() {
             sub-processors:
           </P>
           <List>
-            <li><strong>Stripe</strong> — payment processing; receives your billing email + card info you enter.</li>
+            <li><strong>Polar</strong> — merchant of record / payment processing; receives your billing email + card info you enter.</li>
             <li><strong>Resend</strong> — magic-link email delivery; receives your email address + sign-in URL.</li>
             <li><strong>Unkey</strong> — API key management; stores the API key secrets themselves.</li>
             <li><strong>Railway</strong> — hosting for the API.</li>
