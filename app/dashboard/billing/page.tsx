@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { billing } from "@/lib/backend";
+import { billing, type UsageSnapshot } from "@/lib/backend";
 import { getSession } from "@/lib/session";
 import { BundleButtons } from "./BundleButtons";
 import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
@@ -17,6 +17,7 @@ export default async function BillingPage({
   const token = (await getSession()) as string;
   const balance = await billing.balance(token);
   const isMetered = balance.billing_mode === "metered";
+  const usage = isMetered ? await billing.usage(token).catch(() => null) : null;
 
   return (
     <>
@@ -59,6 +60,7 @@ export default async function BillingPage({
               are spent first; once the balance hits zero, each successful
               check is invoiced at the end of the billing cycle.
             </p>
+            {usage?.available && <UsageThisPeriod usage={usage} />}
             <div className="mt-5">
               <CancelSubscriptionButton />
             </div>
@@ -116,5 +118,40 @@ export default async function BillingPage({
         .
       </p>
     </>
+  );
+}
+
+function UsageThisPeriod({ usage }: { usage: UsageSnapshot }) {
+  const dollars = (usage.amount_cents / 100).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const periodEnd = usage.period_end
+    ? new Date(usage.period_end).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+  return (
+    <div className="mt-5 rounded-md border border-border bg-bg-alt px-4 py-3">
+      <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-text-2">
+        Usage this period
+      </div>
+      <div className="flex items-baseline gap-2 tabular-nums">
+        <span className="text-[22px] font-semibold tracking-[-0.01em]">
+          ${dollars}
+        </span>
+        <span className="text-[13px] text-text-2">
+          &middot; {usage.events.toLocaleString()} check
+          {usage.events === 1 ? "" : "s"}
+        </span>
+      </div>
+      {periodEnd && (
+        <div className="mt-1 text-[12px] text-text-3">
+          Resets {periodEnd}
+        </div>
+      )}
+    </div>
   );
 }
