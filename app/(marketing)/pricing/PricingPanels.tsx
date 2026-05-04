@@ -10,16 +10,34 @@ export function PricingPanels() {
 
   return (
     <>
-      <div className="mx-auto mb-8 inline-flex w-full max-w-[420px] items-center rounded-md border border-border bg-surface p-1 shadow-sm">
-        <ToggleButton active={mode === "metered"} onClick={() => setMode("metered")}>
-          Metered billing
-        </ToggleButton>
-        <ToggleButton active={mode === "credits"} onClick={() => setMode("credits")}>
-          Pay as you go
-          <span className="ml-2 rounded-xs bg-ok/15 px-[6px] py-[2px] text-[10px] font-semibold uppercase tracking-[0.06em] text-ok">
-            Save 43%
-          </span>
-        </ToggleButton>
+      <div className="mb-12 flex justify-center">
+        <div
+          role="tablist"
+          aria-label="Pricing mode"
+          className="inline-flex items-center rounded-full border border-border bg-surface p-1 shadow-sm"
+        >
+          <ToggleButton
+            active={mode === "metered"}
+            onClick={() => setMode("metered")}
+          >
+            Metered billing
+          </ToggleButton>
+          <ToggleButton
+            active={mode === "credits"}
+            onClick={() => setMode("credits")}
+          >
+            Pay as you go
+            <span
+              className={`ml-2 rounded-full px-[8px] py-[2px] font-mono text-[10px] font-semibold uppercase tracking-[0.04em] transition-colors ${
+                mode === "credits"
+                  ? "bg-white/22 text-white"
+                  : "bg-accent-soft text-accent"
+              }`}
+            >
+              Save 43%
+            </span>
+          </ToggleButton>
+        </div>
       </div>
 
       {mode === "metered" ? <MeteredPanel /> : <CreditsPanel />}
@@ -39,10 +57,13 @@ function ToggleButton({
   return (
     <button
       type="button"
+      role="tab"
       onClick={onClick}
-      aria-pressed={active}
-      className={`flex-1 rounded-sm px-4 py-[10px] text-[14px] font-medium transition-colors ${
-        active ? "bg-accent text-white shadow-sm" : "text-text-2 hover:text-text"
+      aria-selected={active}
+      className={`inline-flex items-center gap-2 rounded-full px-[22px] py-[10px] text-[14px] font-medium transition-colors ${
+        active
+          ? "bg-accent text-white shadow-[0_2px_6px_rgba(46,111,158,0.3)]"
+          : "text-text-2 hover:text-text"
       }`}
     >
       {children}
