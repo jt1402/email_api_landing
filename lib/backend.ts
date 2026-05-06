@@ -47,6 +47,9 @@ export type RecentCheck = {
   domain: string;
   risk_score: number;
   recommendation: string;
+  risk_level: "low" | "medium" | "high" | "critical" | null;
+  confidence_level: "low" | "medium" | "high" | null;
+  disposable: boolean | null;
   latency_ms: number;
   cached: boolean;
   checked_at: string;

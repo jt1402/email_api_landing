@@ -148,6 +148,9 @@ export default async function UsagePage() {
               <tr className="text-left text-[12px] text-text-2">
                 <th className="py-2 font-medium">Domain</th>
                 <th className="py-2 font-medium">Recommendation</th>
+                <th className="py-2 font-medium">Risk</th>
+                <th className="py-2 font-medium">Confidence</th>
+                <th className="py-2 font-medium">Disposable</th>
                 <th className="py-2 font-medium">Score</th>
                 <th className="py-2 text-right font-medium">Latency</th>
               </tr>
@@ -158,6 +161,15 @@ export default async function UsagePage() {
                   <td className="py-[10px] font-mono">{c.domain}</td>
                   <td className="py-[10px]">
                     <RecTag rec={c.recommendation} />
+                  </td>
+                  <td className="py-[10px]">
+                    <RiskTag level={c.risk_level} />
+                  </td>
+                  <td className="py-[10px]">
+                    <ConfidenceTag level={c.confidence_level} />
+                  </td>
+                  <td className="py-[10px]">
+                    <DisposableTag value={c.disposable} />
                   </td>
                   <td className="py-[10px] tabular-nums">{c.risk_score}</td>
                   <td className="py-[10px] text-right tabular-nums text-text-2">
@@ -213,6 +225,55 @@ function RecTag({ rec }: { rec: string }) {
       className={`rounded-full px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] ${cls}`}
     >
       {rec.replace(/_/g, " ")}
+    </span>
+  );
+}
+
+function RiskTag({ level }: { level: string | null }) {
+  if (!level) return <span className="text-text-3">—</span>;
+  const cls =
+    {
+      low: "bg-[#ecfdf5] text-[#047857]",
+      medium: "bg-[#fffbeb] text-[#92400e]",
+      high: "bg-[#fff7ed] text-[#9a3412]",
+      critical: "bg-[#fef2f2] text-[#b91c1c]",
+    }[level] ?? "bg-bg-alt text-text-2";
+  return (
+    <span
+      className={`rounded-full px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] ${cls}`}
+    >
+      {level}
+    </span>
+  );
+}
+
+function ConfidenceTag({ level }: { level: string | null }) {
+  if (!level) return <span className="text-text-3">—</span>;
+  const cls =
+    {
+      high: "bg-[#ecfdf5] text-[#047857]",
+      medium: "bg-[#fffbeb] text-[#92400e]",
+      low: "bg-[#fef2f2] text-[#b91c1c]",
+    }[level] ?? "bg-bg-alt text-text-2";
+  return (
+    <span
+      className={`rounded-full px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] ${cls}`}
+    >
+      {level}
+    </span>
+  );
+}
+
+function DisposableTag({ value }: { value: boolean | null }) {
+  if (value === null) return <span className="text-text-3">—</span>;
+  const cls = value
+    ? "bg-[#fef2f2] text-[#b91c1c]"
+    : "bg-[#ecfdf5] text-[#047857]";
+  return (
+    <span
+      className={`rounded-full px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] ${cls}`}
+    >
+      {value ? "yes" : "no"}
     </span>
   );
 }
