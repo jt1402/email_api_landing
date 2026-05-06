@@ -46,6 +46,7 @@ export default async function DashboardLayout({
           <DashNavLink href="/dashboard/keys">API keys</DashNavLink>
           <DashNavLink href="/dashboard/usage">Usage</DashNavLink>
           <DashNavLink href="/dashboard/billing">Billing</DashNavLink>
+          <DashNavLink href="/dashboard/settings">Settings</DashNavLink>
         </nav>
         <div className="mt-4 border-t border-border pt-4 text-[13px] text-text-2">
           <div className="mb-[10px] break-all font-medium text-text">

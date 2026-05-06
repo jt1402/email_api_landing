@@ -124,6 +124,18 @@ export async function logoutAction(): Promise<void> {
   redirect("/login");
 }
 
+export async function deleteAccountAction(): Promise<ActionResult> {
+  const token = await getSession();
+  if (!token) return { ok: false, error: "Not signed in." };
+  try {
+    await auth.deleteAccount(token);
+  } catch (err) {
+    return { ok: false, error: errMessage(err, "Could not delete account.") };
+  }
+  await clearSession();
+  redirect("/?deleted=1");
+}
+
 export async function createKeyAction(
   _prev: CreateKeyResult | null,
   formData: FormData

@@ -204,6 +204,8 @@ export const auth = {
   logout: (session: string) =>
     call<{ ok: boolean }>("/v1/auth/logout", { method: "POST", session }),
   me: (session: string) => call<User>("/v1/auth/me", { session }),
+  deleteAccount: (session: string) =>
+    call<void>("/v1/auth/me", { method: "DELETE", session }),
 };
 
 // ── Dashboard endpoints (session required) ─────────────────────────────
