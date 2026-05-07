@@ -60,7 +60,7 @@ export default async function DashboardLayout({
           </form>
         </div>
       </aside>
-      <main className="max-w-[1100px] p-10 px-12 max-[820px]:p-8 max-[820px]:px-6">
+      <main className="max-w-[1100px] py-6 px-12 max-[820px]:py-6 max-[820px]:px-6">
         <WelcomeKeyBanner />
         {(isOut || isLow) && credits !== null && (
           <BalanceBanner credits={credits} critical={isOut} />
