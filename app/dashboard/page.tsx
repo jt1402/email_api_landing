@@ -4,16 +4,19 @@ import { getSession } from "@/lib/session";
 
 export default async function DashboardOverview() {
   const token = (await getSession()) as string;
-  const [summary, keyList, recent, balance] = await Promise.all([
+  const [summary, keyList, balance, domainsRollup, byDay] = await Promise.all([
     usage.summary(token),
     keys.list(token),
-    usage.recent(token, 5),
     billing.balance(token),
+    // Tiny rollup just to read the `counts` object — items list is unused.
+    usage.domains(token, { since_days: 30, limit: 1 }),
+    usage.byDay(token, 14),
   ]);
 
   const activeKeys = keyList.filter((k) => !k.revoked_at);
   const creditsRemaining = balance.credit_balance_checks;
   const used = summary.checks_this_period;
+  const needsReview = domainsRollup.counts.need_review;
 
   return (
     <>
@@ -62,51 +65,10 @@ export default async function DashboardOverview() {
         />
       </div>
 
-      <Panel>
-        <PanelHead
-          title="Recent checks"
-          sub="Latest calls your keys made — domains only, no emails."
-          action={
-            <Link href="/dashboard/usage" className="btn btn-ghost">
-              View all
-            </Link>
-          }
-        />
-        {recent.items.length === 0 ? (
-          <Empty>
-            No checks yet. Run your first one from the{" "}
-            <Link href="/docs" className="text-accent">
-              docs
-            </Link>
-            .
-          </Empty>
-        ) : (
-          <table className="w-full border-collapse text-[14px]">
-            <thead>
-              <tr className="text-left text-[12px] text-text-2">
-                <th className="py-2 font-medium">Domain</th>
-                <th className="py-2 font-medium">Recommendation</th>
-                <th className="py-2 font-medium">Score</th>
-                <th className="py-2 text-right font-medium">Latency</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.items.map((c, i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="py-[10px] font-mono">{c.domain}</td>
-                  <td className="py-[10px]">
-                    <RecTag rec={c.recommendation} />
-                  </td>
-                  <td className="py-[10px] tabular-nums">{c.risk_score}</td>
-                  <td className="py-[10px] text-right tabular-nums text-text-2">
-                    {c.cached ? "cache" : `${c.latency_ms}ms`}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Panel>
+      <div className="mb-5 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
+        <NeedsReviewCard count={needsReview} />
+        <DailyVolumeCard buckets={byDay.buckets} />
+      </div>
 
       <Panel>
         <PanelHead
@@ -146,6 +108,119 @@ export default async function DashboardOverview() {
   );
 }
 
+function NeedsReviewCard({ count }: { count: number }) {
+  const href = "/dashboard/domains?recommendation=verify_manually&list=none";
+  if (count === 0) {
+    return (
+      <Panel>
+        <div className="flex items-start gap-4">
+          <div className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-[#ecfdf5] text-[#047857] text-[18px]">
+            ✓
+          </div>
+          <div>
+            <h3 className="text-[18px]">All caught up</h3>
+            <p className="mt-1 text-[14px] text-text-2">
+              No domains awaiting review. Flagged signups will appear here.
+            </p>
+            <Link
+              href="/dashboard/domains"
+              className="mt-3 inline-block text-[13px] text-accent"
+            >
+              Open Domain Activity →
+            </Link>
+          </div>
+        </div>
+      </Panel>
+    );
+  }
+  return (
+    <Panel>
+      <div className="flex items-start gap-4">
+        <div className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-[#fff7ed] font-mono text-[14px] font-semibold text-warn">
+          {count > 99 ? "99+" : count}
+        </div>
+        <div>
+          <h3 className="text-[18px]">Needs review</h3>
+          <p className="mt-1 text-[14px] text-text-2">
+            {count === 1
+              ? "1 domain is flagged as verify_manually and hasn't been decided."
+              : `${count.toLocaleString()} domains are flagged as verify_manually and haven't been decided.`}
+          </p>
+          <Link
+            href={href}
+            className="mt-3 inline-block text-[13px] text-accent"
+          >
+            Triage now →
+          </Link>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function DailyVolumeCard({
+  buckets,
+}: {
+  buckets: { date: string; total: number; blocks: number }[];
+}) {
+  const today = new Date();
+  const days: { date: string; total: number; blocks: number }[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const found = buckets.find((b) => b.date === iso);
+    days.push(found ?? { date: iso, total: 0, blocks: 0 });
+  }
+  const max = Math.max(1, ...days.map((d) => d.total));
+  const totalChecks = days.reduce((acc, d) => acc + d.total, 0);
+
+  return (
+    <Panel>
+      <PanelHead
+        title="Daily volume"
+        sub={`Last 14 days · ${totalChecks.toLocaleString()} checks`}
+        action={
+          <Link href="/dashboard/usage" className="text-[13px] text-accent">
+            Full chart →
+          </Link>
+        }
+      />
+      {totalChecks === 0 ? (
+        <Empty>No activity yet. Run a few checks and come back.</Empty>
+      ) : (
+        <div className="flex h-[80px] items-end gap-[3px]">
+          {days.map((d) => {
+            const heightPct = (d.total / max) * 100;
+            const blocksPct = d.total === 0 ? 0 : (d.blocks / d.total) * 100;
+            return (
+              <div
+                key={d.date}
+                className="flex flex-1 flex-col justify-end"
+                style={{ height: "100%" }}
+                title={`${d.date}: ${d.total} checks (${d.blocks} blocks)`}
+              >
+                <div
+                  className="w-full rounded-t-[2px] bg-accent"
+                  style={{
+                    height: `${heightPct}%`,
+                    minHeight: d.total > 0 ? "2px" : "0",
+                  }}
+                >
+                  <div
+                    className="rounded-t-[2px] bg-risk"
+                    style={{ height: `${blocksPct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
 function Stat({
   label,
   value,
@@ -175,6 +250,7 @@ function Panel({ children }: { children: React.ReactNode }) {
     </section>
   );
 }
+
 function PanelHead({
   title,
   sub,
@@ -185,7 +261,7 @@ function PanelHead({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 flex items-start justify-between gap-3">
+    <div className="mb-3 flex items-start justify-between gap-3">
       <div>
         <h3 className="mb-1 text-[18px]">{title}</h3>
         <p className="text-[14px] text-text-2">{sub}</p>
@@ -194,23 +270,11 @@ function PanelHead({
     </div>
   );
 }
+
 function Empty({ children }: { children: React.ReactNode }) {
   return (
     <div className="rounded-sm border border-dashed border-border py-8 text-center text-[14px] text-text-3">
       {children}
     </div>
-  );
-}
-function RecTag({ rec }: { rec: string }) {
-  let cls = "bg-accent-soft text-accent";
-  if (rec === "block") cls = "bg-[#fef2f2] text-risk";
-  else if (rec === "verify_manually" || rec === "allow_with_flag")
-    cls = "bg-[#fff7ed] text-warn";
-  return (
-    <span
-      className={`rounded-full px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] ${cls}`}
-    >
-      {rec.replace(/_/g, " ")}
-    </span>
   );
 }
