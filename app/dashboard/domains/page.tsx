@@ -10,10 +10,19 @@ type Search = {
   list?: string;
   q?: string;
   page?: string;
+  per?: string;
   domain?: string;
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 200] as const;
+const DEFAULT_PAGE_SIZE = 10;
+
+function parsePageSize(raw: string | undefined): number {
+  const n = Number(raw);
+  return PAGE_SIZE_OPTIONS.includes(n as (typeof PAGE_SIZE_OPTIONS)[number])
+    ? n
+    : DEFAULT_PAGE_SIZE;
+}
 
 export default async function DomainsPage({
   searchParams,
@@ -27,8 +36,9 @@ export default async function DomainsPage({
   const since_days = sp.since ? Math.max(1, Math.min(365, Number(sp.since))) : 30;
   const in_list = isInList(sp.list) ? sp.list : undefined;
   const q = (sp.q ?? "").trim() || undefined;
+  const pageSize = parsePageSize(sp.per);
   const page = Math.max(1, Number(sp.page ?? "1"));
-  const offset = (page - 1) * PAGE_SIZE;
+  const offset = (page - 1) * pageSize;
 
   const [data, drawerData] = await Promise.all([
     usage.domains(token, {
@@ -36,19 +46,20 @@ export default async function DomainsPage({
       since_days,
       in_list,
       q,
-      limit: PAGE_SIZE,
+      limit: pageSize,
       offset,
     } as DomainsQuery),
     sp.domain ? usage.domainHistory(token, sp.domain).catch(() => null) : Promise.resolve(null),
   ]);
 
-  const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(data.total / pageSize));
   const baseQuery: Search = {
     recommendation: sp.recommendation,
     since: sp.since,
     list: sp.list,
     q: sp.q,
     page: sp.page,
+    per: sp.per,
   };
 
   return (
@@ -137,9 +148,15 @@ export default async function DomainsPage({
         </table>
       </section>
 
-      {totalPages > 1 && (
-        <Pagination current={page} total={totalPages} sp={sp} />
-      )}
+      <PaginationBar
+        current={page}
+        totalPages={totalPages}
+        totalItems={data.total}
+        pageSize={pageSize}
+        sp={sp}
+      />
+      <ShowMore current={pageSize} totalItems={data.total} sp={sp} />
+
 
       {sp.domain && drawerData && (
         <DomainDrawer data={drawerData} closeHref={"?" + new URLSearchParams(stripUndef(baseQuery)).toString()} />
@@ -442,42 +459,125 @@ function RowActions({
   );
 }
 
-function Pagination({
+function buildHref(sp: Search, overrides: Record<string, string | undefined>): string {
+  const p = new URLSearchParams();
+  const merged: Record<string, string | undefined> = {
+    recommendation: sp.recommendation,
+    since: sp.since,
+    list: sp.list,
+    q: sp.q,
+    page: sp.page,
+    per: sp.per,
+    ...overrides,
+  };
+  for (const [k, v] of Object.entries(merged)) {
+    if (v) p.set(k, v);
+  }
+  return `?${p.toString()}`;
+}
+
+function PaginationBar({
   current,
-  total,
+  totalPages,
+  totalItems,
+  pageSize,
   sp,
 }: {
   current: number;
-  total: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
   sp: Search;
 }) {
-  const params = (page: number) => {
-    const p = new URLSearchParams();
-    if (sp.recommendation) p.set("recommendation", sp.recommendation);
-    if (sp.since) p.set("since", sp.since);
-    if (sp.list) p.set("list", sp.list);
-    if (sp.q) p.set("q", sp.q);
-    p.set("page", String(page));
-    return `?${p.toString()}`;
-  };
+  const from = totalItems === 0 ? 0 : (current - 1) * pageSize + 1;
+  const to = Math.min(totalItems, current * pageSize);
   return (
-    <nav className="mt-4 flex items-center justify-between text-[13px] text-text-2">
-      <div>
-        Page {current} of {total}
+    <nav className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[13px] text-text-2">
+      <div className="flex items-center gap-3">
+        <span>
+          {totalItems === 0
+            ? "No results"
+            : `${from}–${to} of ${totalItems.toLocaleString()}`}
+        </span>
+        <span className="text-text-3">·</span>
+        <PerPageSelector current={pageSize} sp={sp} />
       </div>
-      <div className="flex gap-2">
-        {current > 1 && (
-          <Link href={params(current - 1)} className="btn btn-ghost btn-sm">
+      {totalPages > 1 && (
+        <div className="flex items-center gap-2">
+          <span className="text-text-3">
+            Page {current} of {totalPages}
+          </span>
+          <Link
+            href={buildHref(sp, { page: String(current - 1) })}
+            className={`btn btn-ghost btn-sm ${current <= 1 ? "pointer-events-none opacity-40" : ""}`}
+            aria-disabled={current <= 1}
+          >
             ← Previous
           </Link>
-        )}
-        {current < total && (
-          <Link href={params(current + 1)} className="btn btn-ghost btn-sm">
+          <Link
+            href={buildHref(sp, { page: String(current + 1) })}
+            className={`btn btn-ghost btn-sm ${current >= totalPages ? "pointer-events-none opacity-40" : ""}`}
+            aria-disabled={current >= totalPages}
+          >
             Next →
           </Link>
-        )}
-      </div>
+        </div>
+      )}
     </nav>
+  );
+}
+
+function PerPageSelector({ current, sp }: { current: number; sp: Search }) {
+  return (
+    <span className="flex items-center gap-2">
+      <span>Per page:</span>
+      <span className="flex gap-[2px] rounded-sm border border-border-strong p-[2px]">
+        {PAGE_SIZE_OPTIONS.map((n) => {
+          const isActive = n === current;
+          // Reset to page 1 whenever per-page changes — otherwise the user
+          // could land beyond the new page count.
+          const href = buildHref(sp, { per: String(n), page: "1" });
+          return (
+            <Link
+              key={n}
+              href={href}
+              className={`rounded-[3px] px-2 py-[2px] text-[12px] tabular-nums ${
+                isActive
+                  ? "bg-text text-surface"
+                  : "text-text-2 hover:text-text"
+              }`}
+            >
+              {n}
+            </Link>
+          );
+        })}
+      </span>
+    </span>
+  );
+}
+
+function ShowMore({
+  current,
+  totalItems,
+  sp,
+}: {
+  current: number;
+  totalItems: number;
+  sp: Search;
+}) {
+  // Pick the next bigger page size that's still useful given total items.
+  // If we're already showing everything (or at the cap), no link.
+  const next = PAGE_SIZE_OPTIONS.find((n) => n > current && n <= Math.max(totalItems, current));
+  if (!next || totalItems <= current) return null;
+  return (
+    <div className="mt-2 text-center">
+      <Link
+        href={buildHref(sp, { per: String(next), page: "1" })}
+        className="text-[13px] text-accent hover:underline"
+      >
+        Show more ({next} per page) →
+      </Link>
+    </div>
   );
 }
 
