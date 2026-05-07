@@ -4,10 +4,10 @@ import { getSession } from "@/lib/session";
 
 export default async function UsagePage() {
   const token = (await getSession()) as string;
-  const [summary, recent, balance] = await Promise.all([
+  const [summary, balance, byDay] = await Promise.all([
     usage.summary(token),
-    usage.recent(token, 50),
     billing.balance(token),
+    usage.byDay(token, 30),
   ]);
 
   const total =
@@ -18,16 +18,6 @@ export default async function UsagePage() {
     { label: "Allow with flag", value: summary.allow_with_flag, tone: "warn" as const },
     { label: "Allow", value: summary.allows, tone: "ok" as const },
   ];
-
-  // Top domains from the recent sample
-  const topDomains = Object.entries(
-    recent.items.reduce<Record<string, number>>((acc, r) => {
-      acc[r.domain] = (acc[r.domain] ?? 0) + 1;
-      return acc;
-    }, {})
-  )
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
 
   return (
     <>
@@ -68,7 +58,7 @@ export default async function UsagePage() {
       <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
         <h3 className="mb-1 text-[18px]">Breakdown by recommendation</h3>
         <p className="mb-5 text-[14px] text-text-2">
-          How your checks are split across the four verdict values.
+          How your checks are split across the four verdict values, this period.
         </p>
         {total === 0 ? (
           <Empty>
@@ -111,75 +101,19 @@ export default async function UsagePage() {
       </section>
 
       <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
-        <h3 className="mb-1 text-[18px]">Top domains checked</h3>
-        <p className="mb-5 text-[14px] text-text-2">
-          From your last 50 checks — domains only, no emails.
-        </p>
-        {topDomains.length === 0 ? (
-          <Empty>No checks yet.</Empty>
-        ) : (
-          <table className="w-full border-collapse text-[14px]">
-            <thead>
-              <tr className="text-left text-[12px] text-text-2">
-                <th className="py-2 font-medium">Domain</th>
-                <th className="py-2 text-right font-medium">Checks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topDomains.map(([d, count]) => (
-                <tr key={d} className="border-t border-border">
-                  <td className="py-[10px] font-mono">{d}</td>
-                  <td className="py-[10px] text-right tabular-nums">{count}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <h3 className="mb-1 text-[18px]">Daily volume</h3>
+        <p className="mb-5 text-[14px] text-text-2">Checks per day for the last 30 days. Blocks shown in red.</p>
+        <DailyChart buckets={byDay.buckets} />
       </section>
 
       <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
-        <h3 className="mb-1 text-[18px]">Recent checks</h3>
-        <p className="mb-5 text-[14px] text-text-2">Your latest 50 calls.</p>
-        {recent.items.length === 0 ? (
-          <Empty>No checks yet.</Empty>
-        ) : (
-          <table className="w-full border-collapse text-[14px]">
-            <thead>
-              <tr className="text-left text-[12px] text-text-2">
-                <th className="py-2 font-medium">Domain</th>
-                <th className="py-2 font-medium">Recommendation</th>
-                <th className="py-2 font-medium">Risk</th>
-                <th className="py-2 font-medium">Confidence</th>
-                <th className="py-2 font-medium">Disposable</th>
-                <th className="py-2 font-medium">Score</th>
-                <th className="py-2 text-right font-medium">Latency</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.items.map((c, i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="py-[10px] font-mono">{c.domain}</td>
-                  <td className="py-[10px]">
-                    <RecTag rec={c.recommendation} />
-                  </td>
-                  <td className="py-[10px]">
-                    <RiskTag level={c.risk_level} />
-                  </td>
-                  <td className="py-[10px]">
-                    <ConfidenceTag level={c.confidence_level} />
-                  </td>
-                  <td className="py-[10px]">
-                    <DisposableTag value={c.disposable} />
-                  </td>
-                  <td className="py-[10px] tabular-nums">{c.risk_score}</td>
-                  <td className="py-[10px] text-right tabular-nums text-text-2">
-                    {c.cached ? "cache" : `${c.latency_ms}ms`}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <h3 className="mb-1 text-[18px]">Domain Activity</h3>
+        <p className="mb-3 text-[14px] text-text-2">
+          Per-domain rollups, signal drill-down, and one-click allow/block live on their own page.
+        </p>
+        <Link href="/dashboard/domains" className="btn btn-ghost btn-sm">
+          Open Domain Activity →
+        </Link>
       </section>
     </>
   );
@@ -215,65 +149,52 @@ function Empty({ children }: { children: React.ReactNode }) {
   );
 }
 
-function RecTag({ rec }: { rec: string }) {
-  let cls = "bg-accent-soft text-accent";
-  if (rec === "block") cls = "bg-[#fef2f2] text-risk";
-  else if (rec === "verify_manually" || rec === "allow_with_flag")
-    cls = "bg-[#fff7ed] text-warn";
+function DailyChart({
+  buckets,
+}: {
+  buckets: { date: string; total: number; blocks: number }[];
+}) {
+  // Backend returns rows only for days with activity; pad to 30 with zeros so
+  // the bar chart shows continuous days even on sparse usage.
+  const today = new Date();
+  const days: { date: string; total: number; blocks: number }[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const found = buckets.find((b) => b.date === iso);
+    days.push(found ?? { date: iso, total: 0, blocks: 0 });
+  }
+  const max = Math.max(1, ...days.map((d) => d.total));
+  if (max <= 1) {
+    return (
+      <Empty>No activity yet. Run a few checks and come back.</Empty>
+    );
+  }
   return (
-    <span
-      className={`rounded-full px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] ${cls}`}
-    >
-      {rec.replace(/_/g, " ")}
-    </span>
-  );
-}
-
-function RiskTag({ level }: { level: string | null }) {
-  if (!level) return <span className="text-text-3">—</span>;
-  const cls =
-    {
-      low: "bg-[#ecfdf5] text-[#047857]",
-      medium: "bg-[#fffbeb] text-[#92400e]",
-      high: "bg-[#fff7ed] text-[#9a3412]",
-      critical: "bg-[#fef2f2] text-[#b91c1c]",
-    }[level] ?? "bg-bg-alt text-text-2";
-  return (
-    <span
-      className={`rounded-full px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] ${cls}`}
-    >
-      {level}
-    </span>
-  );
-}
-
-function ConfidenceTag({ level }: { level: string | null }) {
-  if (!level) return <span className="text-text-3">—</span>;
-  const cls =
-    {
-      high: "bg-[#ecfdf5] text-[#047857]",
-      medium: "bg-[#fffbeb] text-[#92400e]",
-      low: "bg-[#fef2f2] text-[#b91c1c]",
-    }[level] ?? "bg-bg-alt text-text-2";
-  return (
-    <span
-      className={`rounded-full px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] ${cls}`}
-    >
-      {level}
-    </span>
-  );
-}
-
-function DisposableTag({ value }: { value: boolean | null }) {
-  if (value === null) return <span className="text-text-3">—</span>;
-  const cls = value
-    ? "bg-[#fef2f2] text-[#b91c1c]"
-    : "bg-[#ecfdf5] text-[#047857]";
-  return (
-    <span
-      className={`rounded-full px-2 py-[3px] font-mono text-[11px] uppercase tracking-[0.08em] ${cls}`}
-    >
-      {value ? "yes" : "no"}
-    </span>
+    <div className="flex h-[140px] items-end gap-[3px]">
+      {days.map((d) => {
+        const heightPct = (d.total / max) * 100;
+        const blocksPct = d.total === 0 ? 0 : (d.blocks / d.total) * 100;
+        return (
+          <div
+            key={d.date}
+            className="group relative flex flex-1 flex-col justify-end"
+            style={{ height: "100%" }}
+            title={`${d.date}: ${d.total} checks (${d.blocks} blocks)`}
+          >
+            <div
+              className="w-full rounded-t-[2px] bg-accent transition-colors group-hover:bg-accent-hover"
+              style={{ height: `${heightPct}%`, minHeight: d.total > 0 ? "2px" : "0" }}
+            >
+              <div
+                className="rounded-t-[2px] bg-risk"
+                style={{ height: `${blocksPct}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }

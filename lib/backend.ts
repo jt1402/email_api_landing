@@ -250,6 +250,39 @@ export type DomainsQuery = {
   offset?: number;
 };
 
+export type DailyBucket = { date: string; total: number; blocks: number };
+
+export type HistoryRow = {
+  checked_at: string;
+  recommendation: string;
+  risk_score: number;
+  risk_level: string | null;
+  confidence_level: string | null;
+  disposable: boolean | null;
+  latency_ms: number;
+  cached: boolean;
+  path_taken: string;
+};
+
+export type SignalEntry = {
+  name: string;
+  direction: "risk" | "trust";
+  weight: number;
+  description: string;
+};
+
+export type DomainHistory = {
+  domain: string;
+  history: HistoryRow[];
+  aggregate: DomainBreakdown;
+  total: number;
+  in_allow_list: boolean;
+  in_block_list: boolean;
+  is_reviewed: boolean;
+  last_signals_fired: SignalEntry[];
+  last_signals_trust: SignalEntry[];
+};
+
 export const usage = {
   summary: (session: string) =>
     call<UsageSummary>("/v1/usage/summary", { session }),
@@ -265,22 +298,35 @@ export const usage = {
     if (q.q) p.set("q", q.q);
     if (q.limit) p.set("limit", String(q.limit));
     if (q.offset) p.set("offset", String(q.offset));
-    return call<{ items: DomainRow[]; total: number }>(
-      `/v1/usage/domains?${p.toString()}`,
-      { session }
-    );
+    return call<{
+      items: DomainRow[];
+      total: number;
+      counts: { need_review: number; blocked: number; trusted: number };
+    }>(`/v1/usage/domains?${p.toString()}`, { session });
   },
+  domainHistory: (session: string, domain: string, limit = 20) =>
+    call<DomainHistory>(
+      `/v1/usage/domains/${encodeURIComponent(domain)}/history?limit=${limit}`,
+      { session }
+    ),
+  byDay: (session: string, days = 30) =>
+    call<{ days: number; buckets: DailyBucket[] }>(
+      `/v1/usage/by_day?days=${days}`,
+      { session }
+    ),
 };
 
+export type ListKind = "allow" | "block" | "reviewed";
+
 export const lists = {
-  get: (session: string, kind: "allow" | "block") =>
+  get: (session: string, kind: ListKind) =>
     call<{ kind: string; domains: string[] }>(`/v1/lists/${kind}`, { session }),
-  add: (session: string, kind: "allow" | "block", domain: string) =>
+  add: (session: string, kind: ListKind, domain: string) =>
     call<{ kind: string; domain: string; added: boolean }>(
       `/v1/lists/${kind}`,
       { method: "POST", session, body: JSON.stringify({ domain }) }
     ),
-  remove: (session: string, kind: "allow" | "block", domain: string) =>
+  remove: (session: string, kind: ListKind, domain: string) =>
     call<{ kind: string; domain: string; removed: boolean }>(
       `/v1/lists/${kind}/${encodeURIComponent(domain)}`,
       { method: "DELETE", session }

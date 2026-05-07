@@ -2,6 +2,7 @@ import Link from "next/link";
 import { usage, type DomainsQuery } from "@/lib/backend";
 import { getSession } from "@/lib/session";
 import { addToListAction, removeFromListAction } from "@/app/actions";
+import { DomainDrawer } from "./DomainDrawer";
 
 type Search = {
   recommendation?: string;
@@ -9,6 +10,7 @@ type Search = {
   list?: string;
   q?: string;
   page?: string;
+  domain?: string;
 };
 
 const PAGE_SIZE = 50;
@@ -28,27 +30,40 @@ export default async function DomainsPage({
   const page = Math.max(1, Number(sp.page ?? "1"));
   const offset = (page - 1) * PAGE_SIZE;
 
-  const data = await usage.domains(token, {
-    recommendation,
-    since_days,
-    in_list,
-    q,
-    limit: PAGE_SIZE,
-    offset,
-  } as DomainsQuery);
+  const [data, drawerData] = await Promise.all([
+    usage.domains(token, {
+      recommendation,
+      since_days,
+      in_list,
+      q,
+      limit: PAGE_SIZE,
+      offset,
+    } as DomainsQuery),
+    sp.domain ? usage.domainHistory(token, sp.domain).catch(() => null) : Promise.resolve(null),
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
+  const baseQuery: Search = {
+    recommendation: sp.recommendation,
+    since: sp.since,
+    list: sp.list,
+    q: sp.q,
+    page: sp.page,
+  };
 
   return (
     <>
-      <h2 className="mb-2 text-[28px] leading-[1.2] tracking-[-0.02em]">
-        Domain Activity
-      </h2>
-      <p className="mb-6 max-w-[720px] text-[14px] text-text-2">
-        Per-domain rollup of your check history. Click <span className="font-mono">Trust</span> or{" "}
-        <span className="font-mono">Block</span> to add the domain to your custom list — future
-        signups skip the engine entirely.
-      </p>
+      <div className="mb-2 flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-[28px] leading-[1.2] tracking-[-0.02em]">Domain Activity</h2>
+          <p className="mt-1 max-w-[640px] text-[14px] text-text-2">
+            Triage flagged signups, manage trust/block lists, mark reviewed domains as
+            decided. Click any row for the full history.
+          </p>
+        </div>
+      </div>
+
+      <PresetPills counts={data.counts} active={presetFor(sp)} base={baseQuery} />
 
       <Filters
         recommendation={recommendation}
@@ -77,34 +92,46 @@ export default async function DomainsPage({
                 </td>
               </tr>
             ) : (
-              data.items.map((row) => (
-                <tr key={row.domain} className="border-t border-border">
-                  <td className="px-5 py-[10px] font-mono">{row.domain}</td>
-                  <td className="px-5 py-[10px] text-right tabular-nums">
-                    {row.total.toLocaleString()}
-                  </td>
-                  <td className="px-5 py-[10px]">
-                    <Breakdown b={row.breakdown} total={row.total} />
-                  </td>
-                  <td className="px-5 py-[10px] text-[13px] text-text-2">
-                    {formatRelative(row.last_seen)}
-                  </td>
-                  <td className="px-5 py-[10px]">
-                    {row.in_allow_list && <ListBadge kind="allow" />}
-                    {row.in_block_list && <ListBadge kind="block" />}
-                    {!row.in_allow_list && !row.in_block_list && (
-                      <span className="text-text-3">—</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-[10px] text-right">
-                    <RowActions
-                      domain={row.domain}
-                      inAllow={row.in_allow_list}
-                      inBlock={row.in_block_list}
-                    />
-                  </td>
-                </tr>
-              ))
+              data.items.map((row) => {
+                const drawerHref =
+                  "?" +
+                  new URLSearchParams({
+                    ...stripUndef(baseQuery),
+                    domain: row.domain,
+                  }).toString();
+                return (
+                  <tr key={row.domain} className="border-t border-border hover:bg-bg-alt">
+                    <td className="px-5 py-[10px] font-mono">
+                      <Link href={drawerHref} className="block hover:text-accent">
+                        {row.domain}
+                      </Link>
+                    </td>
+                    <td className="px-5 py-[10px] text-right tabular-nums">
+                      {row.total.toLocaleString()}
+                    </td>
+                    <td className="px-5 py-[10px]">
+                      <Breakdown b={row.breakdown} total={row.total} />
+                    </td>
+                    <td className="px-5 py-[10px] text-[13px] text-text-2">
+                      {formatRelative(row.last_seen)}
+                    </td>
+                    <td className="px-5 py-[10px]">
+                      {row.in_allow_list && <ListBadge kind="allow" />}
+                      {row.in_block_list && <ListBadge kind="block" />}
+                      {!row.in_allow_list && !row.in_block_list && (
+                        <span className="text-text-3">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-[10px] text-right">
+                      <RowActions
+                        domain={row.domain}
+                        inAllow={row.in_allow_list}
+                        inBlock={row.in_block_list}
+                      />
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -112,6 +139,10 @@ export default async function DomainsPage({
 
       {totalPages > 1 && (
         <Pagination current={page} total={totalPages} sp={sp} />
+      )}
+
+      {sp.domain && drawerData && (
+        <DomainDrawer data={drawerData} closeHref={"?" + new URLSearchParams(stripUndef(baseQuery)).toString()} />
       )}
     </>
   );
@@ -128,6 +159,101 @@ function isRec(v: string | undefined): v is DomainsQuery["recommendation"] {
 
 function isInList(v: string | undefined): v is "allow" | "block" | "none" {
   return v === "allow" || v === "block" || v === "none";
+}
+
+function stripUndef(o: Record<string, string | undefined>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(o)) if (v) out[k] = v;
+  return out;
+}
+
+function presetFor(sp: Search): "review" | "blocked" | "trusted" | "all" {
+  if (sp.recommendation === "verify_manually" && sp.list === "none") return "review";
+  if (sp.list === "block") return "blocked";
+  if (sp.list === "allow") return "trusted";
+  return "all";
+}
+
+function PresetPills({
+  counts,
+  active,
+  base,
+}: {
+  counts: { need_review: number; blocked: number; trusted: number };
+  active: "review" | "blocked" | "trusted" | "all";
+  base: Search;
+}) {
+  const presets = [
+    {
+      key: "review" as const,
+      label: "Needs review",
+      count: counts.need_review,
+      tone: "warn" as const,
+      params: { recommendation: "verify_manually", list: "none" },
+    },
+    {
+      key: "blocked" as const,
+      label: "Blocked",
+      count: counts.blocked,
+      tone: "risk" as const,
+      params: { list: "block" },
+    },
+    {
+      key: "trusted" as const,
+      label: "Trusted",
+      count: counts.trusted,
+      tone: "ok" as const,
+      params: { list: "allow" },
+    },
+    {
+      key: "all" as const,
+      label: "All",
+      count: null,
+      tone: "neutral" as const,
+      params: {},
+    },
+  ];
+  return (
+    <div className="mb-4 flex flex-wrap gap-2">
+      {presets.map((p) => {
+        const isActive = active === p.key;
+        const merged: Record<string, string> = {
+          ...(p.key === "all" ? {} : { since: base.since ?? "30" }),
+          ...(p.params as Record<string, string>),
+          ...(base.q ? { q: base.q } : {}),
+        };
+        const params = new URLSearchParams(merged);
+        const href = `?${params.toString()}`;
+        const toneCls = isActive
+          ? p.tone === "warn"
+            ? "bg-warn text-white"
+            : p.tone === "risk"
+            ? "bg-risk text-white"
+            : p.tone === "ok"
+            ? "bg-ok text-white"
+            : "bg-text text-surface"
+          : "bg-surface text-text border border-border-strong";
+        return (
+          <Link
+            key={p.key}
+            href={href}
+            className={`rounded-full px-3 py-1 text-[13px] font-medium transition-colors ${toneCls}`}
+          >
+            {p.label}
+            {p.count !== null && (
+              <span
+                className={`ml-2 rounded-full px-1.5 py-[1px] text-[11px] tabular-nums ${
+                  isActive ? "bg-white/20" : "bg-bg-alt text-text-2"
+                }`}
+              >
+                {p.count}
+              </span>
+            )}
+          </Link>
+        );
+      })}
+    </div>
+  );
 }
 
 function Filters({
