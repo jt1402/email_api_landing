@@ -16,6 +16,7 @@ import {
   billing,
   checks,
   keys,
+  lists,
   oauth,
   BackendCallError,
   type BundleId,
@@ -210,4 +211,34 @@ export async function revokeKeyAction(formData: FormData): Promise<void> {
   }
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/keys");
+}
+
+export async function addToListAction(formData: FormData): Promise<void> {
+  const token = await getSession();
+  if (!token) redirect("/login");
+  const kind = String(formData.get("kind") ?? "");
+  const domain = String(formData.get("domain") ?? "").trim();
+  if ((kind !== "allow" && kind !== "block") || !domain) return;
+  try {
+    await lists.add(token!, kind, domain);
+  } catch {
+    /* surface errors via revalidate-fed UI; keep action void */
+  }
+  revalidatePath("/dashboard/domains");
+  revalidatePath("/dashboard/settings");
+}
+
+export async function removeFromListAction(formData: FormData): Promise<void> {
+  const token = await getSession();
+  if (!token) redirect("/login");
+  const kind = String(formData.get("kind") ?? "");
+  const domain = String(formData.get("domain") ?? "").trim();
+  if ((kind !== "allow" && kind !== "block") || !domain) return;
+  try {
+    await lists.remove(token!, kind, domain);
+  } catch {
+    /* idempotent enough — ignore 404 */
+  }
+  revalidatePath("/dashboard/domains");
+  revalidatePath("/dashboard/settings");
 }

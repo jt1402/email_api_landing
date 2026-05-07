@@ -224,6 +224,32 @@ export const keys = {
     call<void>(`/v1/keys/${id}`, { method: "DELETE", session }),
 };
 
+export type DomainBreakdown = {
+  blocks: number;
+  verify_manually: number;
+  allow_with_flag: number;
+  allows: number;
+};
+
+export type DomainRow = {
+  domain: string;
+  total: number;
+  breakdown: DomainBreakdown;
+  last_seen: string;
+  last_recommendation: string;
+  in_allow_list: boolean;
+  in_block_list: boolean;
+};
+
+export type DomainsQuery = {
+  recommendation?: "allow" | "allow_with_flag" | "verify_manually" | "block";
+  since_days?: number;
+  in_list?: "allow" | "block" | "none";
+  q?: string;
+  limit?: number;
+  offset?: number;
+};
+
 export const usage = {
   summary: (session: string) =>
     call<UsageSummary>("/v1/usage/summary", { session }),
@@ -231,6 +257,34 @@ export const usage = {
     call<{ items: RecentCheck[] }>(`/v1/usage/recent?limit=${limit}`, {
       session,
     }),
+  domains: (session: string, q: DomainsQuery = {}) => {
+    const p = new URLSearchParams();
+    if (q.recommendation) p.set("recommendation", q.recommendation);
+    if (q.since_days) p.set("since_days", String(q.since_days));
+    if (q.in_list) p.set("in_list", q.in_list);
+    if (q.q) p.set("q", q.q);
+    if (q.limit) p.set("limit", String(q.limit));
+    if (q.offset) p.set("offset", String(q.offset));
+    return call<{ items: DomainRow[]; total: number }>(
+      `/v1/usage/domains?${p.toString()}`,
+      { session }
+    );
+  },
+};
+
+export const lists = {
+  get: (session: string, kind: "allow" | "block") =>
+    call<{ kind: string; domains: string[] }>(`/v1/lists/${kind}`, { session }),
+  add: (session: string, kind: "allow" | "block", domain: string) =>
+    call<{ kind: string; domain: string; added: boolean }>(
+      `/v1/lists/${kind}`,
+      { method: "POST", session, body: JSON.stringify({ domain }) }
+    ),
+  remove: (session: string, kind: "allow" | "block", domain: string) =>
+    call<{ kind: string; domain: string; removed: boolean }>(
+      `/v1/lists/${kind}/${encodeURIComponent(domain)}`,
+      { method: "DELETE", session }
+    ),
 };
 
 export const checks = {
