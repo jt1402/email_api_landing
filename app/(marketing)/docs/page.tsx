@@ -43,37 +43,50 @@ export default function DocsPage() {
 
             <Section id="quickstart">
               <H2>Quickstart</H2>
-              <P>Install the SDK for your language and make your first check in under 60 seconds.</P>
+              <P>
+                Get an API key from the{" "}
+                <DocsLink href="/dashboard/keys">dashboard</DocsLink> and make your first check in
+                under 60 seconds. Official SDKs are on the way; the API is plain HTTP + JSON in
+                the meantime.
+              </P>
 
-              <H3>1. Install</H3>
-              <CodeBlock label="terminal">
-{`# Node
-npm install verifymail
-
-# Python
-pip install verifymail`}
+              <H3>1. Make a check</H3>
+              <CodeBlock label="curl">
+{`curl -X POST https://api.verifymailapi.com/v1/check \\
+  -H "X-API-Key: $VERIFYMAIL_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"email": "test@mailinator.com"}'`}
               </CodeBlock>
 
-              <H3>2. Make your first check</H3>
-              <CodeBlock label="first_check.py">
-{`from verifymail import VerifyMail
-
-client = VerifyMail(api_key="vm_live_...")
-result = client.check("user@mailinator.com")
-
-print(result.verdict.recommendation)  # -> "block"
-print(result.score.value)             # -> 100
-print(result.score.confidence)        # -> 1.0`}
-              </CodeBlock>
-
-              <H3>3. Switch on the recommendation</H3>
+              <H3>2. Branch on the recommendation</H3>
               <CodeBlock label="signup.js">
-{`switch (result.verdict.recommendation) {
-  case 'block':           throw new Error(result.verdict.summary);
-  case 'allow_with_flag': requireEmailVerification(email, result); break;
-  case 'allow':           break;
+{`const res = await fetch("https://api.verifymailapi.com/v1/check", {
+  method: "POST",
+  headers: { "X-API-Key": process.env.VERIFYMAIL_KEY, "Content-Type": "application/json" },
+  body: JSON.stringify({ email }),
+});
+const result = await res.json();
+
+switch (result.verdict.recommendation) {
+  case "block":
+    return reject("This email cannot be used.");
+  case "allow_with_flag":
+    // Suspicious — route through your verification step.
+    user.requires_email_verification = true;
+    await sendVerificationEmail(user);
+    break;
+  case "allow":
+    // Clean — proceed normally.
+    break;
 }`}
               </CodeBlock>
+
+              <Callout>
+                <strong>The canonical handler.</strong> Map{" "}
+                <Code>allow_with_flag</Code> to <Code>requires_verification: true</Code> on your
+                user record, then force the user through your existing email-verification or
+                friction step. Most apps already have one — the flag costs you zero new code.
+              </Callout>
             </Section>
 
             <Section id="authentication">
@@ -99,10 +112,59 @@ curl -H "X-API-Key: $VERIFYMAIL_KEY" \\
             <Section id="rate-limits">
               <H2>Rate limits</H2>
               <P>
-                Default limit is <strong>100 requests / second</strong> per API key, bursting to
-                500 with token-bucket smoothing. Requests over the limit return <Code>429</Code>{" "}
-                with a <Code>Retry-After</Code> header. For higher volume, contact support.
+                Default ceiling is <strong>600 requests / minute</strong> per API key. Every
+                response includes three headers so your client can back off before hitting the
+                wall:
               </P>
+              <CodeBlock label="response headers">
+{`X-RateLimit-Limit: 600
+X-RateLimit-Remaining: 412
+X-RateLimit-Reset: 1746920460`}
+              </CodeBlock>
+              <P>
+                Over-limit requests return <Code>429 Too Many Requests</Code> with{" "}
+                <Code>Retry-After: &lt;seconds&gt;</Code> and{" "}
+                <Code>error.code = &quot;too_many_requests&quot;</Code>. A simple back-off:
+              </P>
+              <CodeBlock label="retry on 429">
+{`if (res.status === 429) {
+  const wait = Number(res.headers.get("Retry-After") ?? 1) * 1000;
+  await new Promise(r => setTimeout(r, wait));
+  return retry(req);
+}`}
+              </CodeBlock>
+              <P>
+                Need a higher ceiling? Contact support — per-key limits are configurable.
+              </P>
+            </Section>
+
+            <Section id="idempotency">
+              <H2>Idempotency</H2>
+              <P>
+                Every credit-debiting POST endpoint accepts an <Code>Idempotency-Key</Code> header.
+                Replay the same key within 24 hours and you get the cached response back, with no
+                duplicate charge. Reusing the same key with a different request body returns{" "}
+                <Code>409 invalid_idempotency_key</Code>.
+              </P>
+              <CodeBlock label="idempotent check">
+{`POST /v1/check
+Idempotency-Key: 2c4f9e1a-7b88-4a3d-9c0f-1e3a5b7c8d9e
+X-API-Key: $VERIFYMAIL_KEY
+Content-Type: application/json
+
+{"email": "user@example.com"}`}
+              </CodeBlock>
+              <P>
+                Use any opaque string (UUID v4 is conventional). Applies to{" "}
+                <Code>/v1/check</Code>, <Code>/v1/check/domain</Code>,{" "}
+                <Code>/v1/check/bulk</Code>, and <Code>/v1/check/async</Code>. The streaming
+                bulk variant deliberately does not support idempotency.
+              </P>
+              <Callout>
+                <strong>When to use it:</strong> any time a network retry could double-charge —
+                browser-side fetches that timeout, queue workers with at-least-once delivery,
+                CI/CD scripts that may be re-run.
+              </Callout>
             </Section>
 
             <Section id="check">
@@ -169,27 +231,217 @@ Content-Type: application/json
               </CodeBlock>
             </Section>
 
-            <Section id="report">
-              <H2>POST /v1/report</H2>
+            <Section id="check-domain">
+              <H2>POST /v1/check/domain</H2>
               <P>
-                Report a false positive or false negative to tune VerifyMail against your
-                workload. Reports feed the network-effect model and are shared (de-identified)
-                across customers.
+                Use when you already have a domain (not an email) and don&apos;t need us to
+                syntax-validate an address. Same engine, same 1-credit cost.{" "}
+                <Code>meta.email</Code> is blanked in the response.
               </P>
               <CodeBlock label="request">
-{`POST /v1/report
-{ "request_id": "req_8d4b3e2f1a6c",
-  "correct_verdict": "allow",
-  "notes": "Customer converted and paid." }`}
+{`POST /v1/check/domain
+X-API-Key: $VERIFYMAIL_KEY
+Content-Type: application/json
+
+{"domain": "example.com"}`}
               </CodeBlock>
             </Section>
 
-            <Section id="usage">
-              <H2>GET /v1/usage</H2>
+            <Section id="check-bulk">
+              <H2>POST /v1/check/bulk</H2>
               <P>
-                Returns your current-period usage, credit balance, and next billing window.
-                Useful for dashboards and budget guards.
+                Submit up to <strong>100 emails per request</strong>. Charges N credits up front
+                (all-or-nothing — if your balance is below N, the request 402s without a partial
+                debit). Internally bounded to 10 concurrent checks, so a 100-row batch finishes in
+                roughly 10× a single check rather than 100×.
               </P>
+              <CodeBlock label="request">
+{`POST /v1/check/bulk
+X-API-Key: $VERIFYMAIL_KEY
+Content-Type: application/json
+
+{"emails": ["a@example.com", "b@example.com", "c@example.com"]}`}
+              </CodeBlock>
+              <CodeBlock label="200 OK · response">
+{`{
+  "items": [ /* CheckResponse, CheckResponse, ... */ ],
+  "summary": {
+    "total": 3,
+    "credits_charged": 3,
+    "credits_remaining": 8742,
+    "elapsed_ms": 327
+  }
+}`}
+              </CodeBlock>
+              <P>
+                Order is preserved — <Code>items[i]</Code> matches <Code>emails[i]</Code>.
+                Invalid-syntax emails produce a <Code>CheckResponse</Code> with{" "}
+                <Code>recommendation: &quot;block&quot;</Code>; individual rows never error.
+              </P>
+            </Section>
+
+            <Section id="check-bulk-stream">
+              <H2>POST /v1/check/bulk/stream</H2>
+              <P>
+                Same input as <Code>/v1/check/bulk</Code>, but emits one JSON line per row as it
+                finishes. Use for large batches (5k–100k addresses) when you want to start
+                processing results before the full job completes.
+              </P>
+              <CodeBlock label="response · application/x-ndjson">
+{`{"index": 4, "result": { /* CheckResponse */ }}
+{"index": 0, "result": { /* CheckResponse */ }}
+{"index": 1, "result": { /* CheckResponse */ }}
+{"index": 2, "result": { /* CheckResponse */ }}
+{"index": 3, "result": { /* CheckResponse */ }}
+{"event": "summary", "total": 5, "credits_charged": 5, "credits_remaining": 8737, "elapsed_ms": 612}`}
+              </CodeBlock>
+              <P>
+                Results stream in finish-order, not input-order — correlate via the{" "}
+                <Code>index</Code> field. The final line is always a{" "}
+                <Code>{`{event: "summary"}`}</Code> object.
+              </P>
+              <CodeBlock label="consume in Node">
+{`const res = await fetch(url, { method: "POST", headers, body });
+const reader = res.body!.getReader();
+const decoder = new TextDecoder();
+let buf = "";
+while (true) {
+  const { value, done } = await reader.read();
+  if (done) break;
+  buf += decoder.decode(value, { stream: true });
+  const lines = buf.split("\\n");
+  buf = lines.pop()!;
+  for (const line of lines) {
+    if (!line) continue;
+    const evt = JSON.parse(line);
+    if (evt.event === "summary") console.log("done", evt);
+    else processRow(evt.index, evt.result);
+  }
+}`}
+              </CodeBlock>
+            </Section>
+
+            <Section id="check-async">
+              <H2>POST /v1/check/async</H2>
+              <P>
+                Two-phase verification. Returns a 202 immediately with a preliminary verdict from
+                the fast path, then runs the deep SMTP / catch-all probe in the background and
+                POSTs the final result to your webhook.
+              </P>
+              <CodeBlock label="request">
+{`POST /v1/check/async
+X-API-Key: $VERIFYMAIL_KEY
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "webhook_url": "https://your-app.example/webhooks/verifymail",
+  "webhook_secret": "whk_..."   // optional — signs the payload with HMAC-SHA256
+}`}
+              </CodeBlock>
+              <CodeBlock label="202 Accepted">
+{`{
+  "request_id": "req_8d4b3e2f1a6c",
+  "status": "pending",
+  "preliminary": { /* CheckResponse from fast/standard layers */ },
+  "webhook_url": "https://your-app.example/webhooks/verifymail",
+  "estimated_completion_ms": 6000
+}`}
+              </CodeBlock>
+              <P>
+                When the deep path completes, we POST the final{" "}
+                <Code>CheckResponse</Code> to your <Code>webhook_url</Code> with HMAC signature
+                headers — see <DocsLink href="#webhooks">Webhook signatures</DocsLink>. The webhook
+                URL must be HTTPS and resolve to a public IP; private addresses are rejected.
+              </P>
+            </Section>
+
+            <Section id="lists">
+              <H2>GET / POST / DELETE /v1/lists/{`{kind}`}</H2>
+              <P>
+                Per-account custom allow / block lists. Domains on the allow list always return{" "}
+                <Code>allow</Code>; domains on the block list always return <Code>block</Code>.
+                Both bypass the engine and the credit charge — verdicts come straight from Redis
+                in &lt;2ms.
+              </P>
+              <CodeBlock label="manage your lists">
+{`# List entries
+GET    /v1/lists/allow
+GET    /v1/lists/block
+
+# Add an entry
+POST   /v1/lists/allow   {"domain": "ourcustomerdomain.com"}
+POST   /v1/lists/block   {"domain": "abusivedomain.shop"}
+
+# Remove an entry
+DELETE /v1/lists/allow/ourcustomerdomain.com`}
+              </CodeBlock>
+              <P>
+                These endpoints are session-authed and live behind the dashboard. Allow takes
+                precedence over block when a domain ends up on both.
+              </P>
+            </Section>
+
+            <Section id="report">
+              <H2>POST /v1/report</H2>
+              <P>
+                Tell us when a domain you saw turned out to be confirmed throwaway, confirmed
+                legitimate, or suspected. Reports feed the network-effect model — your reports
+                tune your future verdicts and (de-identified) help other customers.
+              </P>
+              <CodeBlock label="request">
+{`POST /v1/report
+X-API-Key: $VERIFYMAIL_KEY
+Content-Type: application/json
+
+{
+  "domain": "weirddomain.shop",
+  "outcome": "confirmed_throwaway",
+  "notes": "User signed up, used trial, never paid, never returned."
+}`}
+              </CodeBlock>
+            </Section>
+
+            <Section id="usage-me">
+              <H2>GET /v1/usage/me</H2>
+              <P>
+                Programmatic equivalent of the dashboard&apos;s Usage summary. Returns
+                current-period totals plus the credit balance so your monitoring stack can read
+                them without scraping the UI.
+              </P>
+              <CodeBlock label="200 OK">
+{`{
+  "total_checks": 41203,
+  "checks_this_period": 9128,
+  "period_start": "2026-05-01T00:00:00+00:00",
+  "blocks": 612,
+  "allow_with_flag": 240,
+  "allows": 8276,
+  "avg_latency_ms": 42.1,
+  "cache_hit_rate": 0.71,
+  "credit_balance_checks": 8742
+}`}
+              </CodeBlock>
+            </Section>
+
+            <Section id="status">
+              <H2>GET /v1/status</H2>
+              <P>
+                Component-level health. Always returns <Code>200</Code> — read the per-component
+                fields under <Code>components</Code> to diagnose. Distinct from <Code>/health</Code>,
+                which is a binary liveness probe used by load balancers.
+              </P>
+              <CodeBlock label="200 OK">
+{`{
+  "status": "ok",            // or "degraded"
+  "components": {
+    "redis": "ok",
+    "postgres": "ok",
+    "dns": "ok"
+  },
+  "latency_ms": 18
+}`}
+              </CodeBlock>
             </Section>
 
             <Section id="schema">
@@ -208,9 +460,9 @@ Content-Type: application/json
             </Section>
 
             <Section id="recommendations">
-              <H2>The 4 recommendation values</H2>
+              <H2>The 3 recommendation values</H2>
               <P>
-                The <Code>verdict.recommendation</Code> field is always one of exactly four
+                The <Code>verdict.recommendation</Code> field is always one of exactly three
                 strings — switch on it directly without parsing thresholds.
               </P>
               <Table
@@ -299,6 +551,9 @@ verdict.recommendation           =  "allow_with_flag"`}
                     <SignalRow name="malformed_local_part" cat="structural" dir="risk" weight="20" desc="Local part contains disallowed characters or invalid encoding." />
                     <SignalRow name="typo_of_popular_domain" cat="structural" dir="risk" weight="15" desc={<>Likely typo of a major provider (e.g. <Code>gmial.com</Code>).</>} />
                     <SignalRow name="role_address" cat="structural" dir="risk" weight="12" desc="Generic role address (admin@, info@, noreply@)." />
+                    <SignalRow name="random_local_part_pattern" cat="structural" dir="risk" weight="25" desc={<>Local part looks machine-generated — high entropy, low vowels, no separators (e.g. <Code>q9zk3v7x2m@</Code>).</>} />
+                    <SignalRow name="unusual_local_chars" cat="structural" dir="risk" weight="18" desc={<>Local contains RFC-valid but vanishingly rare chars (<Code>!#$%&apos;*/=?^`{`{|}`}~</Code>).</>} />
+                    <SignalRow name="impossible_address_on_legit_provider" cat="structural" dir="risk" weight="100" desc="Compound: unusual chars on a known major provider whose signup form rejects them. Forces allow_with_flag regardless of trust signals." />
                     <SignalRow name="known_disposable_domain" cat="blocklist" dir="risk" weight="100" desc="Domain on confirmed disposable blocklist." />
                     <SignalRow name="domain_age_under_30_days" cat="domain" dir="risk" weight="42" desc="Recently-registered domain. Fraud domains are almost always fresh." />
                     <SignalRow name="no_mx_records" cat="domain" dir="risk" weight="70" desc="Domain has no MX records — cannot receive mail." />
@@ -327,64 +582,145 @@ verdict.recommendation           =  "allow_with_flag"`}
               </p>
             </Section>
 
-            <Section id="sdks">
-              <H2>SDKs</H2>
-              <P>Official clients for four languages, with full types for every response field.</P>
-              <H3>Python</H3>
-              <P>
-                Install via <Code>pip install verifymail</Code>. The client is sync by default;
-                import <Code>AsyncVerifyMail</Code> for asyncio support.
-              </P>
-              <H3>Node.js</H3>
-              <P>
-                Install via <Code>npm install verifymail</Code>. Ships with full TypeScript types
-                for every field in the response.
-              </P>
-              <H3>PHP</H3>
-              <P>
-                Install via <Code>composer require verifymail/verifymail</Code>. PHP 8.1+; uses
-                readonly properties for the response object.
-              </P>
-              <H3>Go</H3>
-              <P>
-                Install via <Code>go get github.com/verifymail/verifymail-go</Code>. Context-aware,
-                zero external dependencies beyond the stdlib.
-              </P>
-            </Section>
-
             <Section id="webhooks">
-              <H2>Webhooks</H2>
+              <H2>Webhook signatures</H2>
               <P>
-                Deep checks run async when latency budget would exceed 300ms. Subscribe to{" "}
-                <Code>check.completed</Code> events to receive the full response when the
-                background job finishes. Preliminary response is returned synchronously.
+                When you call <Code>/v1/check/async</Code> with a{" "}
+                <Code>webhook_secret</Code>, the final <Code>check.completed</Code> event is
+                signed with HMAC-SHA256 of the raw request body. Verify the signature in your
+                handler before trusting the payload — anyone can POST to a public URL.
+              </P>
+              <H3>Headers we send</H3>
+              <CodeBlock label="request headers (from us → you)">
+{`Content-Type: application/json
+User-Agent: VerifyMail-Webhook/1.0
+X-VerifyMail-Request-Id: req_abc123
+X-VerifyMail-Event: check.completed
+X-VerifyMail-Signature: sha256=8c2a5b3e...`}
+              </CodeBlock>
+
+              <H3>Verifying in Node.js</H3>
+              <CodeBlock label="verify-webhook.ts">
+{`import crypto from "node:crypto";
+
+function verify(rawBody: Buffer, signatureHeader: string, secret: string) {
+  const expected = "sha256=" + crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex");
+  // timingSafeEqual avoids leaking secret length via timing.
+  const a = Buffer.from(signatureHeader);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// Express handler — use express.raw, NOT express.json, so rawBody is preserved.
+app.post("/webhooks/verifymail", express.raw({ type: "application/json" }), (req, res) => {
+  const sig = req.header("X-VerifyMail-Signature") ?? "";
+  if (!verify(req.body, sig, process.env.VERIFYMAIL_WEBHOOK_SECRET!)) {
+    return res.status(401).send("bad signature");
+  }
+  const event = JSON.parse(req.body.toString("utf8"));
+  // event.result is the full CheckResponse.
+  await handleCheckCompleted(event);
+  res.status(200).end();
+});`}
+              </CodeBlock>
+
+              <H3>Verifying in Python</H3>
+              <CodeBlock label="verify_webhook.py">
+{`import hmac, hashlib
+
+def verify(raw_body: bytes, signature_header: str, secret: str) -> bool:
+    expected = "sha256=" + hmac.new(
+        secret.encode("utf-8"), raw_body, hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature_header)
+
+# In FastAPI: use Request.body() — JSON parsing happens after verification.
+@app.post("/webhooks/verifymail")
+async def webhook(request: Request):
+    raw = await request.body()
+    sig = request.headers.get("X-VerifyMail-Signature", "")
+    if not verify(raw, sig, os.environ["VERIFYMAIL_WEBHOOK_SECRET"]):
+        raise HTTPException(status_code=401, detail="bad signature")
+    event = json.loads(raw)
+    await handle_check_completed(event)
+    return {"ok": True}`}
+              </CodeBlock>
+
+              <H3>Retry policy</H3>
+              <P>
+                We retry non-2xx responses up to 3 times with exponential backoff (1s, 5s, 25s).
+                4xx errors (except 408/429) are not retried — fix them on your side and we&apos;ll
+                stop hammering you.
               </P>
             </Section>
 
             <Section id="errors">
-              <H2>Errors</H2>
-              <P>All errors return a consistent shape:</P>
+              <H2>Error codes</H2>
+              <P>All errors return a consistent envelope:</P>
               <CodeBlock label="error response">
 {`{
   "error": {
-    "code": "invalid_email",
-    "message": "Email failed syntax validation.",
-    "request_id": "req_..."
+    "code": "too_many_requests",
+    "http_status": 429,
+    "message": "Rate limit exceeded — over 600 req/min on this key. Retry after the window resets.",
+    "request_id": "req_8d4b3e2f1a6c",
+    "docs_url": "https://verifymailapi.com/docs/rate-limits",
+    "limit": 600,
+    "reset_at": "2026-05-11T14:30:00Z"
   }
 }`}
               </CodeBlock>
               <Table
                 head={["HTTP", "Code", "Meaning"]}
                 rows={[
-                  ["400", <Code key="c">invalid_email</Code>, "Email failed syntax validation."],
                   ["401", <Code key="c">invalid_api_key</Code>, "API key missing or unknown."],
-                  ["403", <Code key="c">key_scope_denied</Code>, "Key does not have permission for this environment."],
-                  ["429", <Code key="c">rate_limited</Code>, <>Rate limit exceeded. See <Code>Retry-After</Code>.</>],
+                  ["401", <Code key="c">invalid_session</Code>, "Session expired or invalid (dashboard only)."],
                   ["402", <Code key="c">quota_exceeded</Code>, "No credits remaining. Buy a bundle to keep going."],
+                  ["409", <Code key="c">invalid_idempotency_key</Code>, "Idempotency-Key reused with a different request body."],
+                  ["422", <Code key="c">invalid_request</Code>, "Missing or malformed parameter (email, domain, etc.)."],
+                  ["422", <Code key="c">validation_error</Code>, "Pydantic-level validation failed — see message."],
+                  ["422", <Code key="c">invalid_webhook_url</Code>, "Webhook URL is not HTTPS or resolves to a private IP."],
+                  ["429", <Code key="c">too_many_requests</Code>, <>Per-key rate limit. See <Code>Retry-After</Code> + <Code>X-RateLimit-*</Code> headers.</>],
+                  ["429", <Code key="c">rate_limit_exceeded</Code>, "Monthly check ceiling (legacy — use too_many_requests for burst limits)."],
                   ["500", <Code key="c">internal_error</Code>, "Transient server error. Safe to retry with backoff."],
-                  ["503", <Code key="c">deep_check_unavailable</Code>, "Deep check service temporarily unavailable — fast-path result returned."],
+                  ["503", <Code key="c">service_degraded</Code>, "A component (Redis / Postgres / DNS) is degraded. Retry shortly."],
+                  ["504", <Code key="c">dns_timeout</Code>, "DNS resolution timed out mid-check. Safe to retry."],
                 ]}
               />
+            </Section>
+
+            <Section id="privacy">
+              <H2>Privacy & data handling</H2>
+              <P>
+                VerifyMail is deliberately conservative about PII. The short version:{" "}
+                <strong>we never store full email addresses</strong>, only the domain portion.
+              </P>
+              <Table
+                head={["Data", "Stored?", "Where", "Retention"]}
+                rows={[
+                  ["Domain", "Yes", "Postgres (checks + domain_stats)", "Until you delete your account"],
+                  ["Full email", "No", "In-memory only during the request", "Discarded on response"],
+                  ["Verdict + signals fired", "Yes", "Postgres + Redis cache", "30-day Redis TTL; Postgres rows persist"],
+                  ["IP address of the caller", "No", "—", "—"],
+                  ["Webhook URL + secret", "Per-request", "Discarded after delivery", "Not stored at rest"],
+                ]}
+              />
+              <P>
+                When a verdict is returned, the full email is in the response{" "}
+                <Code>meta.email</Code> field for your records, but our cache strips it before
+                writing. Your account is the only one that ever sees it. We also do not log
+                full emails to access logs — use <Code>POST /v1/check</Code> in production rather
+                than the <Code>GET</Code> variant to keep emails out of query strings.
+              </P>
+              <Callout>
+                <strong>GDPR posture.</strong> We act as a processor of the domain portion of
+                signups your users provide you. Because emails are not stored, the data-subject
+                deletion surface is limited to the domain history — request it from support and
+                we&apos;ll purge.
+              </Callout>
             </Section>
 
             <Section id="versioning" last>
