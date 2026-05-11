@@ -246,7 +246,7 @@ function RecPill({ rec }: { rec: string }) {
   const cls =
     rec === "block"
       ? "bg-[#fef2f2] text-risk"
-      : rec === "verify_manually" || rec === "allow_with_flag"
+      : rec === "allow_with_flag"
       ? "bg-[#fff7ed] text-warn"
       : "bg-accent-soft text-accent";
   return (

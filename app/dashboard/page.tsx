@@ -109,7 +109,7 @@ export default async function DashboardOverview() {
 }
 
 function NeedsReviewCard({ count }: { count: number }) {
-  const href = "/dashboard/domains?recommendation=verify_manually&list=none";
+  const href = "/dashboard/domains?recommendation=allow_with_flag&list=none";
   if (count === 0) {
     return (
       <Panel>
@@ -143,8 +143,8 @@ function NeedsReviewCard({ count }: { count: number }) {
           <h3 className="text-[18px]">Needs review</h3>
           <p className="mt-1 text-[14px] text-text-2">
             {count === 1
-              ? "1 domain is flagged as verify_manually and hasn't been decided."
-              : `${count.toLocaleString()} domains are flagged as verify_manually and haven't been decided.`}
+              ? "1 domain is flagged and hasn't been decided."
+              : `${count.toLocaleString()} domains are flagged and haven't been decided.`}
           </p>
           <Link
             href={href}

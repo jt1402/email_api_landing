@@ -70,8 +70,7 @@ print(result.score.confidence)        # -> 1.0`}
               <CodeBlock label="signup.js">
 {`switch (result.verdict.recommendation) {
   case 'block':           throw new Error(result.verdict.summary);
-  case 'verify_manually': queueForReview(email, result); break;
-  case 'allow_with_flag': logSuspicious(email, result.signals.fired); break;
+  case 'allow_with_flag': requireEmailVerification(email, result); break;
   case 'allow':           break;
 }`}
               </CodeBlock>
@@ -218,8 +217,7 @@ Content-Type: application/json
                 head={["Value", "Meaning", "Suggested action"]}
                 rows={[
                   [<span key="v" className="font-mono text-risk">block</span>, "High confidence this is abuse or a dead address.", "Refuse signup. Show a generic error."],
-                  [<span key="v" className="font-mono text-warn">verify_manually</span>, "Suspicious but ambiguous — could be legitimate.", "Send a confirmation email; hold pending click-through."],
-                  [<span key="v" className="font-mono text-[#0f766e]">allow_with_flag</span>, "Mostly trusted but some risk signals present.", "Allow signup, tag for post-hoc review or rate-limited onboarding."],
+                  [<span key="v" className="font-mono text-warn">allow_with_flag</span>, "Suspicious — could still be legitimate, but route through your friction layer.", "Force email verification or extra onboarding step before granting full access."],
                   [<span key="v" className="font-mono text-ok">allow</span>, "Clean. No material risk signals.", "Proceed normally."],
                 ]}
               />

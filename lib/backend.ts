@@ -36,7 +36,6 @@ export type UsageSummary = {
   checks_this_period: number;
   period_start: string;
   blocks: number;
-  verify_manually: number;
   allow_with_flag: number;
   allows: number;
   avg_latency_ms: number;
@@ -85,7 +84,7 @@ export type CheckResponse = {
     cache_age_seconds: number | null;
   };
   verdict: {
-    recommendation: "allow" | "allow_with_flag" | "verify_manually" | "block";
+    recommendation: "allow" | "allow_with_flag" | "block";
     risk_level: "low" | "medium" | "high" | "critical";
     disposable: boolean;
     catch_all: boolean | null;
@@ -226,7 +225,6 @@ export const keys = {
 
 export type DomainBreakdown = {
   blocks: number;
-  verify_manually: number;
   allow_with_flag: number;
   allows: number;
 };
@@ -242,7 +240,7 @@ export type DomainRow = {
 };
 
 export type DomainsQuery = {
-  recommendation?: "allow" | "allow_with_flag" | "verify_manually" | "block";
+  recommendation?: "allow" | "allow_with_flag" | "block";
   since_days?: number;
   in_list?: "allow" | "block" | "none";
   q?: string;

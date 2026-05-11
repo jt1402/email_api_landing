@@ -166,12 +166,7 @@ export default async function DomainsPage({
 }
 
 function isRec(v: string | undefined): v is DomainsQuery["recommendation"] {
-  return (
-    v === "allow" ||
-    v === "allow_with_flag" ||
-    v === "verify_manually" ||
-    v === "block"
-  );
+  return v === "allow" || v === "allow_with_flag" || v === "block";
 }
 
 function isInList(v: string | undefined): v is "allow" | "block" | "none" {
@@ -185,7 +180,7 @@ function stripUndef(o: Record<string, string | undefined>): Record<string, strin
 }
 
 function presetFor(sp: Search): "review" | "blocked" | "trusted" | "all" {
-  if (sp.recommendation === "verify_manually" && sp.list === "none") return "review";
+  if (sp.recommendation === "allow_with_flag" && sp.list === "none") return "review";
   if (sp.list === "block") return "blocked";
   if (sp.list === "allow") return "trusted";
   return "all";
@@ -206,7 +201,7 @@ function PresetPills({
       label: "Needs review",
       count: counts.need_review,
       tone: "warn" as const,
-      params: { recommendation: "verify_manually", list: "none" },
+      params: { recommendation: "allow_with_flag", list: "none" },
     },
     {
       key: "blocked" as const,
@@ -296,7 +291,6 @@ function Filters({
           className="h-9 rounded-sm border border-border-strong bg-surface px-2 text-[13px] text-text"
         >
           <option value="">All</option>
-          <option value="verify_manually">Verify manually</option>
           <option value="block">Block</option>
           <option value="allow_with_flag">Allow with flag</option>
           <option value="allow">Allow</option>
@@ -360,14 +354,13 @@ function Breakdown({
   b,
   total,
 }: {
-  b: { blocks: number; verify_manually: number; allow_with_flag: number; allows: number };
+  b: { blocks: number; allow_with_flag: number; allows: number };
   total: number;
 }) {
   if (total === 0) return <span className="text-text-3">—</span>;
   const segs: { count: number; cls: string; label: string }[] = [
     { count: b.blocks, cls: "bg-risk", label: "block" },
-    { count: b.verify_manually, cls: "bg-warn", label: "verify" },
-    { count: b.allow_with_flag, cls: "bg-warn/60", label: "flag" },
+    { count: b.allow_with_flag, cls: "bg-warn", label: "flag" },
     { count: b.allows, cls: "bg-ok", label: "allow" },
   ].filter((s) => s.count > 0);
   return (
@@ -384,9 +377,6 @@ function Breakdown({
       </div>
       <div className="font-mono text-[11px] tabular-nums text-text-2">
         {b.blocks > 0 && <span className="mr-2 text-risk">{b.blocks}b</span>}
-        {b.verify_manually > 0 && (
-          <span className="mr-2 text-warn">{b.verify_manually}v</span>
-        )}
         {b.allow_with_flag > 0 && (
           <span className="mr-2 text-warn">{b.allow_with_flag}f</span>
         )}

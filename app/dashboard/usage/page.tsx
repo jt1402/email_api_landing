@@ -11,10 +11,9 @@ export default async function UsagePage() {
   ]);
 
   const total =
-    summary.blocks + summary.verify_manually + summary.allow_with_flag + summary.allows;
+    summary.blocks + summary.allow_with_flag + summary.allows;
   const breakdown = [
     { label: "Blocks", value: summary.blocks, tone: "risk" as const },
-    { label: "Verify manually", value: summary.verify_manually, tone: "warn" as const },
     { label: "Allow with flag", value: summary.allow_with_flag, tone: "warn" as const },
     { label: "Allow", value: summary.allows, tone: "ok" as const },
   ];

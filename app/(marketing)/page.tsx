@@ -129,9 +129,8 @@ export default function LandingPage() {
           <Feature tag="01 — SCORED" title="Confidence-scored, not boolean">
             <FeatureCopy>
               A 0–100 risk score paired with a confidence value between 0 and 1. The verdict
-              recommendation is always one of four values —{" "}
+              recommendation is always one of three values —{" "}
               <span className="font-mono">block</span>,{" "}
-              <span className="font-mono">verify_manually</span>,{" "}
               <span className="font-mono">allow_with_flag</span>,{" "}
               <span className="font-mono">allow</span> — so you can switch on it in code without
               parsing thresholds.

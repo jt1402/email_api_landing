@@ -323,7 +323,7 @@ function RecommendationBadge({
   const cls =
     rec === "block"
       ? "bg-[#fef2f2] text-risk"
-      : rec === "verify_manually" || rec === "allow_with_flag"
+      : rec === "allow_with_flag"
         ? "bg-[#fff7ed] text-warn"
         : "bg-[#ecfdf5] text-ok";
   return (
