@@ -5,17 +5,17 @@ export default function DocsPage() {
   return (
     <section className="pt-4">
       <div className="container-page">
-        <div className="grid grid-cols-[240px_1fr] items-start gap-14 max-[900px]:grid-cols-1 max-[900px]:gap-8">
+        <div className="grid grid-cols-[260px_minmax(0,1fr)] items-start gap-14 max-[900px]:grid-cols-1 max-[900px]:gap-6">
           <DocsToc />
 
-          <article className="min-w-0 max-w-[760px]">
-            <div className="mb-4 font-mono text-[12px] tracking-[0.05em] text-text-3">
-              DOCS · v2026-04
+          <article className="min-w-0">
+            <div className="mb-4 text-[12px] font-medium tracking-[0.005em] text-text-3">
+              Docs · v2026-04
             </div>
-            <h1 className="mb-4 text-[38px] font-semibold leading-[1.15] tracking-[-0.025em]">
+            <h1 className="mb-4 text-[40px] font-semibold leading-[1.1] tracking-[-0.025em]">
               VerifyMail API
             </h1>
-            <p className="mb-10 text-[17px] leading-[1.65] text-text-2">
+            <p className="mb-12 text-[17px] leading-[1.65] text-text-2">
               A single endpoint that tells you whether the person behind an email is real.
               Confidence-weighted risk scores, explainable signals, and catch-all detection built in.
             </p>
@@ -44,7 +44,7 @@ export default function DocsPage() {
             <Section id="quickstart">
               <H2>Quickstart</H2>
               <P>
-                Get an API key from the{" "}
+                Get an API key (prefix <Code>dc_</Code>) from the{" "}
                 <DocsLink href="/dashboard/keys">dashboard</DocsLink> and make your first check in
                 under 60 seconds. Official SDKs are on the way; the API is plain HTTP + JSON in
                 the meantime.
@@ -92,20 +92,26 @@ switch (result.verdict.recommendation) {
             <Section id="authentication">
               <H2>Authentication</H2>
               <P>
-                Every request requires an API key, sent as the <Code>X-API-Key</Code> header. Keys
-                are environment-scoped: <Code>vm_live_*</Code> for production,{" "}
-                <Code>vm_test_*</Code> for staging and tests.
+                Every request requires an API key. Keys are prefixed{" "}
+                <Code>dc_</Code> and created in the{" "}
+                <DocsLink href="/dashboard/keys">dashboard</DocsLink>. Two header forms are
+                accepted; pick whichever fits your client:
               </P>
               <CodeBlock label="shell">
-{`export VERIFYMAIL_KEY="vm_live_..."
+{`export VERIFYMAIL_KEY="dc_..."
 
+# Preferred:
 curl -H "X-API-Key: $VERIFYMAIL_KEY" \\
+  https://api.verifymailapi.com/v1/check?email=test@example.com
+
+# Also accepted (useful when a client only allows Authorization):
+curl -H "Authorization: Bearer $VERIFYMAIL_KEY" \\
   https://api.verifymailapi.com/v1/check?email=test@example.com`}
               </CodeBlock>
               <P>
-                Rotate keys freely from the{" "}
-                <DocsLink href="/dashboard/keys">dashboard</DocsLink> — previous keys remain valid
-                for 24 hours to give you a grace window.
+                Revoke a key from the dashboard at any time — revocation takes effect
+                immediately, so plan your rollover by issuing the new key first, updating your
+                deploy, then revoking the old one.
               </P>
             </Section>
 
@@ -176,14 +182,14 @@ Content-Type: application/json
               <H3>Request</H3>
               <CodeBlock label="request">
 {`POST https://api.verifymailapi.com/v1/check
-X-API-Key: vm_live_...
+X-API-Key: dc_...
 X-Risk-Profile: balanced   # optional — strict | balanced | permissive
 Content-Type: application/json
 
 { "email": "user@myagency-solutions.com" }`}
               </CodeBlock>
 
-              <H3>Response — catch-all fraud example</H3>
+              <H3>Response — fraud-domain example</H3>
               <CodeBlock label="200 OK · application/json">
 {`{
   "meta": {
@@ -193,39 +199,48 @@ Content-Type: application/json
     "checked_at": "2026-04-21T10:24:12.391Z",
     "latency_ms": 94,
     "api_version": "2026-04",
+    "model_phase": "bootstrap",
+    "model_version": "1.0.0",
     "path_taken": "standard",
-    "cached": false
+    "cached": false,
+    "cache_age_seconds": null
   },
   "verdict": {
     "recommendation": "block",
     "risk_level": "critical",
     "disposable": false,
-    "catch_all": true,
+    "catch_all": null,
+    "catch_all_checked": false,
+    "valid_address": true,
     "safe_to_send": false,
-    "summary": "Domain is 14 days old, configured as catch-all, and matches known fraud infrastructure."
+    "summary": "Domain registered 4 days ago and matches known disposable infrastructure. Blocked."
   },
   "score": {
-    "value": 94,
-    "confidence": 0.91,
+    "value": 100,
+    "confidence": 0.9,
     "confidence_level": "high",
+    "components": {
+      "strong_signals": 143,
+      "corroborating": 12,
+      "trust_adjustments": 0,
+      "compounding_bonus": 0,
+      "final_clamped": 100
+    },
     "thresholds": {
-      "block_at": 70,
-      "flag_at": 45,
+      "block_at": 82,
+      "flag_at": 60,
       "your_profile": "balanced"
     },
-    "catch_all_detail": {
-      "detected": true,
-      "probability": 0.97,
-      "confidence": 0.94,
-      "type": "confirmed"
-    }
+    "catch_all_detail": null
   },
   "signals": {
     "fired": [
-      { "name": "catch_all_confirmed",  "direction": "risk", "weight": 55 },
-      { "name": "domain_age_14_days",   "direction": "risk", "weight": 42 },
-      { "name": "mx_shared_with_9_domains", "direction": "risk", "weight": 35 }
-    ]
+      { "name": "domain_age_under_7_days",            "direction": "risk", "weight": 68 },
+      { "name": "mx_known_disposable_infrastructure", "direction": "risk", "weight": 75 },
+      { "name": "suspicious_tld",                     "direction": "risk", "weight": 12 }
+    ],
+    "trust_signals": [],
+    "compounding": { "applied": false, "signal_count": 1, "bonus_applied": 0, "explanation": "" }
   }
 }`}
               </CodeBlock>
@@ -336,7 +351,7 @@ Content-Type: application/json
 {
   "email": "user@example.com",
   "webhook_url": "https://your-app.example/webhooks/verifymail",
-  "webhook_secret": "whk_..."   // optional — signs the payload with HMAC-SHA256
+  "webhook_secret": "..."   // optional, any string — used as the HMAC-SHA256 key
 }`}
               </CodeBlock>
               <CodeBlock label="202 Accepted">
@@ -357,14 +372,20 @@ Content-Type: application/json
             </Section>
 
             <Section id="lists">
-              <H2>GET / POST / DELETE /v1/lists/{`{kind}`}</H2>
+              <H2>/v1/lists — custom allow / block</H2>
+              <Callout>
+                <strong>Dashboard-only endpoints.</strong> These require a logged-in session
+                bearer, not an API key. Manage your lists in the{" "}
+                <DocsLink href="/dashboard/domains">Domain Activity</DocsLink> page; we&apos;ll
+                expose API-key access in a later release.
+              </Callout>
               <P>
                 Per-account custom allow / block lists. Domains on the allow list always return{" "}
                 <Code>allow</Code>; domains on the block list always return <Code>block</Code>.
                 Both bypass the engine and the credit charge — verdicts come straight from Redis
                 in &lt;2ms.
               </P>
-              <CodeBlock label="manage your lists">
+              <CodeBlock label="endpoint shape">
 {`# List entries
 GET    /v1/lists/allow
 GET    /v1/lists/block
@@ -377,8 +398,7 @@ POST   /v1/lists/block   {"domain": "abusivedomain.shop"}
 DELETE /v1/lists/allow/ourcustomerdomain.com`}
               </CodeBlock>
               <P>
-                These endpoints are session-authed and live behind the dashboard. Allow takes
-                precedence over block when a domain ends up on both.
+                Allow takes precedence over block when a domain ends up on both.
               </P>
             </Section>
 
@@ -482,61 +502,107 @@ Content-Type: application/json
                 score. Send <Code>X-Risk-Profile: strict | balanced | permissive</Code> per
                 request, or set an account default.
               </P>
+              <P>
+                Two threshold sets exist: <strong>bootstrap</strong> (stricter — used while we
+                are still gathering calibration data) and <strong>calibrated</strong> (once we
+                have enough confirmed outcomes for your traffic). Bootstrap is the current
+                production default. The active phase is exposed as{" "}
+                <Code>meta.model_phase</Code> in every response.
+              </P>
+              <H3>Bootstrap thresholds (current default)</H3>
               <Table
-                head={["Profile", "block_at", "flag_at", "Best for"]}
+                head={["Profile", "block_at", "flag_at", "confidence_gate", "Best for"]}
                 rows={[
-                  [<strong key="p">strict</strong>, "55", "35", "Payment or financial services — false positives acceptable."],
-                  [<span key="p"><strong>balanced</strong> <span className="ml-1 rounded-full bg-[#eef2ff] px-2 py-[2px] font-mono text-[10px] text-[#4f46e5]">default</span></span>, "70", "50", "SaaS signup, marketing tools, most B2B."],
-                  [<strong key="p">permissive</strong>, "85", "65", "Consumer apps with high-funnel priority — minimize friction."],
+                  [<strong key="p">strict</strong>, "65", "45", "0.85", "Payment or financial services — false positives acceptable."],
+                  [<span key="p"><strong>balanced</strong> <span className="ml-1 rounded-full bg-[#eef2ff] px-2 py-[2px] font-mono text-[10px] text-[#4f46e5]">default</span></span>, "82", "60", "0.85", "SaaS signup, marketing tools, most B2B."],
+                  [<strong key="p">permissive</strong>, "92", "75", "0.80", "Consumer apps with high-funnel priority — minimize friction."],
                 ]}
               />
+              <H3>Calibrated thresholds (post-calibration)</H3>
+              <Table
+                head={["Profile", "block_at", "flag_at", "confidence_gate"]}
+                rows={[
+                  [<strong key="p">strict</strong>, "55", "35", "0.80"],
+                  [<strong key="p">balanced</strong>, "70", "50", "0.75"],
+                  [<strong key="p">permissive</strong>, "85", "65", "0.70"],
+                ]}
+              />
+              <P>
+                <strong>Confidence gate:</strong> a high score with low confidence never
+                auto-blocks. It surfaces as <Code>allow_with_flag</Code> instead — the single
+                rule that prevents most false positives.
+              </P>
             </Section>
 
             <Section id="catch-all">
               <H2>Catch-all detection</H2>
+              <Callout>
+                <strong>Tier-gated feature.</strong> Catch-all SMTP probing is disabled by default
+                (it adds ~500ms of latency) and ships on Pro / Enterprise plans. Async deep
+                checks always run it regardless of plan — see{" "}
+                <DocsLink href="#check-async">/v1/check/async</DocsLink>.
+              </Callout>
               <P>
-                Catch-all domains accept mail for any address, which defeats naive SMTP probes.
-                VerifyMail combines four evidence sources into a single Bayesian probability:
+                Catch-all domains accept mail for any address, which defeats naive SMTP probes
+                that just check &quot;does this mailbox exist?&quot;. VerifyMail sends a random
+                UUID-local-part <Code>RCPT TO</Code> over SMTP and reads the response. The
+                outcome plus the surrounding signals decide what the verdict should be:
               </P>
-              <ol className="mb-4 list-decimal pl-5 text-[15.5px] leading-[1.7] text-text-2">
-                <li className="mb-[6px]"><strong>SMTP probe result</strong> — response to a random-UUID recipient.</li>
-                <li className="mb-[6px]"><strong>Infrastructure signals</strong> — MX configuration, WHOIS age, ASN reputation.</li>
-                <li className="mb-[6px]"><strong>Behavioral history</strong> — delivery/bounce patterns from past traffic.</li>
-                <li className="mb-[6px]"><strong>Cross-customer network data</strong> — correlation with confirmed fraud on shared infrastructure.</li>
-              </ol>
+              <ul className="mb-4 list-disc pl-5 text-[15.5px] leading-[1.7] text-text-2">
+                <li className="mb-[6px]">SMTP 250 to a random recipient → catch-all confirmed (probability 0.85).</li>
+                <li className="mb-[6px]">SMTP 550 or similar reject → not a catch-all (probability 0.05).</li>
+                <li className="mb-[6px]">Timeout / connection failure → inconclusive; we add a confidence penalty rather than guessing.</li>
+              </ul>
+              <P>
+                The probe result is then weighted against the rest of the signal set. A
+                catch-all on a 14-day-old domain with disposable-MX infrastructure is fraud;
+                the exact same probe result on a 6-year-old domain with proper SPF/DKIM/DMARC
+                is normal B2B traffic. Both produce <Code>catch_all_detail.detected: true</Code>;
+                only the surrounding signals (and the resulting{" "}
+                <Code>legitimate_use_likely</Code> boolean) tell them apart.
+              </P>
+              <P>
+                <Code>catch_all_detail.type</Code> is one of <Code>confirmed</Code>,{" "}
+                <Code>suspected</Code>, or <Code>cleared</Code>.
+              </P>
 
               <H3>Worked example A — fraud catch-all</H3>
               <P>
-                Domain registered 14 days ago, MX shared with 9 other domains (7 confirmed
-                disposable), SMTP accepts UUID addresses:
+                Domain registered 4 days ago, MX matches known disposable infrastructure, SMTP
+                accepts a random-UUID recipient:
               </P>
               <CodeBlock label="summary">
-{`catch_all.probability       =  0.97
-catch_all.confidence        =  0.94
-catch_all.type              =  "confirmed"
-verdict.recommendation      =  "block"`}
+{`catch_all_detail.detected              =  true
+catch_all_detail.probability           =  0.85
+catch_all_detail.type                  =  "confirmed"
+catch_all_detail.legitimate_use_likely =  false
+signals.fired = ["catch_all_new_domain", "mx_known_disposable_infrastructure"]
+verdict.recommendation                 =  "block"`}
               </CodeBlock>
 
-              <H3>Worked example B — legitimate catch-all</H3>
+              <H3>Worked example B — established catch-all</H3>
               <P>
-                Domain registered 6 years ago, SPF/DMARC aligned, healthy delivery history, SMTP
-                accepts UUID addresses:
+                Domain registered 6+ years ago, SPF + DMARC published, SMTP accepts a random-UUID
+                recipient:
               </P>
               <CodeBlock label="summary">
-{`catch_all.probability            =  0.88
-catch_all.legitimate_use_likely  =  true
-catch_all.type                   =  "legitimate"
-verdict.recommendation           =  "allow_with_flag"`}
+{`catch_all_detail.detected              =  true
+catch_all_detail.probability           =  0.85
+catch_all_detail.type                  =  "confirmed"
+catch_all_detail.legitimate_use_likely =  true
+signals.trust_signals = ["catch_all_old_established", "spf_dkim_dmarc_all_present", "domain_age_over_5_years"]
+verdict.recommendation                 =  "allow_with_flag"`}
               </CodeBlock>
             </Section>
 
             <Section id="signals-ref">
               <H2>Signals reference</H2>
               <P>
-                A representative slice of what VerifyMail evaluates, with balanced-profile
-                weights. Risk signals add to the score, trust signals subtract.
+                The full signal registry. Risk signals add to the score; trust signals subtract.
+                Hard disqualifiers exit the pipeline early at score=100 with no further
+                evaluation.
               </P>
-              <div className="max-h-[560px] overflow-auto rounded-sm border border-border">
+              <div className="max-h-[600px] overflow-auto rounded-sm border border-border">
                 <table className="w-full min-w-[720px] border-collapse text-[13.5px]">
                   <thead className="sticky top-0 bg-bg-alt">
                     <tr>
@@ -548,37 +614,54 @@ verdict.recommendation           =  "allow_with_flag"`}
                     </tr>
                   </thead>
                   <tbody>
-                    <SignalRow name="malformed_local_part" cat="structural" dir="risk" weight="20" desc="Local part contains disallowed characters or invalid encoding." />
-                    <SignalRow name="typo_of_popular_domain" cat="structural" dir="risk" weight="15" desc={<>Likely typo of a major provider (e.g. <Code>gmial.com</Code>).</>} />
-                    <SignalRow name="role_address" cat="structural" dir="risk" weight="12" desc="Generic role address (admin@, info@, noreply@)." />
-                    <SignalRow name="random_local_part_pattern" cat="structural" dir="risk" weight="25" desc={<>Local part looks machine-generated — high entropy, low vowels, no separators (e.g. <Code>q9zk3v7x2m@</Code>).</>} />
+                    {/* Hard disqualifiers (tier=hard, weight=100, force block) */}
+                    <SignalRow name="invalid_syntax" cat="structural" dir="risk" weight="100*" desc="Email does not pass RFC 5321 syntax validation. Hard disqualifier." />
+                    <SignalRow name="no_mx_records" cat="domain" dir="risk" weight="100*" desc="Domain has no MX records — cannot receive mail. Hard disqualifier." />
+                    <SignalRow name="domain_does_not_exist" cat="domain" dir="risk" weight="100*" desc="DNS NXDOMAIN — the domain itself is not registered. Hard disqualifier." />
+                    <SignalRow name="known_disposable_domain_high_confidence" cat="blocklist" dir="risk" weight="100*" desc="On the curated disposable blocklist with confidence >= 0.95. Hard disqualifier." />
+
+                    {/* Strong */}
+                    <SignalRow name="catch_all_new_domain" cat="smtp" dir="risk" weight="85" desc="Named compound: catch-all configured on a newly registered domain. Replaces both component signals." />
+                    <SignalRow name="impossible_address_on_legit_provider" cat="structural" dir="risk" weight="85" desc="Local part uses chars a major provider's signup form rejects. Compound — forces allow_with_flag." />
+                    <SignalRow name="known_disposable_domain" cat="blocklist" dir="risk" weight="75" desc="On the disposable blocklist with confidence 0.70–0.95." />
+                    <SignalRow name="mx_known_disposable_infrastructure" cat="infra" dir="risk" weight="75" desc="MX host fingerprint matches known disposable email providers." />
+                    <SignalRow name="unicode_homograph_domain" cat="structural" dir="risk" weight="70" desc="Domain contains Cyrillic/Greek lookalike characters (homograph attack)." />
+                    <SignalRow name="domain_age_under_7_days" cat="domain" dir="risk" weight="68" desc="Domain registered less than 7 days ago." />
+                    <SignalRow name="cross_customer_abuse_pattern" cat="behav" dir="risk" weight="35" desc="Domain has triggered abuse signals across multiple unrelated customers." />
+
+                    {/* Corroborating */}
+                    <SignalRow name="suspicious_mx_infrastructure" cat="infra" dir="risk" weight="30" desc="MX cluster shares records with confirmed disposable domains." />
+                    <SignalRow name="catch_all_domain" cat="smtp" dir="risk" weight="30" desc="SMTP probe accepted a random-UUID recipient (catch-all)." />
+                    <SignalRow name="new_domain_30d" cat="domain" dir="risk" weight="25" desc="Domain registered within the last 30 days." />
+                    <SignalRow name="abuse_pattern_detected" cat="behav" dir="risk" weight="25" desc="Per-customer signup velocity / pattern anomaly on this domain." />
+                    <SignalRow name="random_local_part_pattern" cat="structural" dir="risk" weight="25" desc={<>Machine-generated local part — high entropy, low vowels, no separators (e.g. <Code>q9zk3v7x2m@</Code>).</>} />
+                    <SignalRow name="generated_domain_pattern" cat="domain" dir="risk" weight="20" desc="SLD matches algorithmic patterns (long digit runs, all-consonant strings, hash-like names)." />
                     <SignalRow name="unusual_local_chars" cat="structural" dir="risk" weight="18" desc={<>Local contains RFC-valid but vanishingly rare chars (<Code>!#$%&apos;*/=?^`{`{|}`}~</Code>).</>} />
-                    <SignalRow name="impossible_address_on_legit_provider" cat="structural" dir="risk" weight="100" desc="Compound: unusual chars on a known major provider whose signup form rejects them. Forces allow_with_flag regardless of trust signals." />
-                    <SignalRow name="known_disposable_domain" cat="blocklist" dir="risk" weight="100" desc="Domain on confirmed disposable blocklist." />
-                    <SignalRow name="domain_age_under_30_days" cat="domain" dir="risk" weight="42" desc="Recently-registered domain. Fraud domains are almost always fresh." />
-                    <SignalRow name="no_mx_records" cat="domain" dir="risk" weight="70" desc="Domain has no MX records — cannot receive mail." />
-                    <SignalRow name="domain_parking" cat="domain" dir="risk" weight="50" desc="Domain resolves to a parking / for-sale page." />
-                    <SignalRow name="free_domain_tld" cat="domain" dir="risk" weight="18" desc="Uses a free or high-abuse TLD (.tk, .ml, .ga, etc)." />
-                    <SignalRow name="mx_shared_with_fraud" cat="infra" dir="risk" weight="35" desc="MX infrastructure shared with confirmed fraud domains." />
-                    <SignalRow name="asn_high_abuse" cat="infra" dir="risk" weight="22" desc="MX host on an ASN with high historical abuse rate." />
-                    <SignalRow name="catch_all_confirmed" cat="smtp" dir="risk" weight="55" desc="SMTP returned 250 for a random UUID recipient." />
-                    <SignalRow name="smtp_greeting_suspicious" cat="smtp" dir="risk" weight="12" desc="SMTP banner matches known fraud-tool signatures." />
-                    <SignalRow name="mailbox_does_not_exist" cat="smtp" dir="risk" weight="80" desc="SMTP 550 — mailbox explicitly rejected." />
-                    <SignalRow name="abuse_history_network" cat="behav" dir="risk" weight="40" desc="Cross-customer signal: this address or domain has abused other accounts." />
-                    <SignalRow name="high_bounce_history" cat="behav" dir="risk" weight="28" desc="Domain has elevated historical bounce rate." />
-                    <SignalRow name="signup_velocity_spike" cat="behav" dir="risk" weight="18" desc="Domain involved in recent signup velocity anomaly." />
-                    <SignalRow name="major_provider_gmail" cat="trust" dir="trust" weight="-30" desc="Gmail / Workspace address with valid MX." />
-                    <SignalRow name="major_provider_outlook" cat="trust" dir="trust" weight="-28" desc="Outlook / Microsoft 365 address with valid MX." />
-                    <SignalRow name="domain_age_over_2_years" cat="trust" dir="trust" weight="-18" desc="Domain registered over 2 years ago." />
-                    <SignalRow name="dmarc_aligned" cat="trust" dir="trust" weight="-14" desc="Domain publishes aligned SPF / DMARC policy." />
-                    <SignalRow name="healthy_delivery_history" cat="trust" dir="trust" weight="-22" desc="Past deliveries to domain have high engagement and low bounce." />
-                    <SignalRow name="corporate_domain" cat="trust" dir="trust" weight="-12" desc="Domain has WHOIS registered to a verifiable organization." />
+                    <SignalRow name="bulk_registrar" cat="infra" dir="risk" weight="15" desc="Domain registered through a known bulk / cheap-tier registrar." />
+                    <SignalRow name="non_ascii_domain" cat="structural" dir="risk" weight="15" desc="Domain contains non-ASCII characters (IDN); not a homograph attack." />
+                    <SignalRow name="new_domain_90d" cat="domain" dir="risk" weight="12" desc="Domain registered within the last 90 days (but older than 30)." />
+                    <SignalRow name="role_based_address" cat="structural" dir="risk" weight="12" desc="Generic role address (admin@, info@, noreply@, support@, etc.)." />
+                    <SignalRow name="suspicious_tld" cat="structural" dir="risk" weight="12" desc="High-abuse TLD (.xyz, .tk, .top, .click, .icu, .cyou, etc.)." />
+                    <SignalRow name="no_spf_record" cat="infra" dir="risk" weight="10" desc="Domain has no SPF record published." />
+                    <SignalRow name="non_standard_local" cat="structural" dir="risk" weight="10" desc="Local part contains characters outside the standard RFC 5321 charset." />
+                    <SignalRow name="domain_age_unknown" cat="domain" dir="risk" weight="8" desc="RDAP/WHOIS lookup failed — domain age could not be verified." />
+                    <SignalRow name="no_dmarc_record" cat="infra" dir="risk" weight="8" desc="Domain has no DMARC record published." />
+
+                    {/* Trust */}
+                    <SignalRow name="known_legitimate_provider" cat="trust" dir="trust" weight="-30" desc="Major mail provider (Gmail, Outlook, iCloud, Yahoo, Proton, etc.)." />
+                    <SignalRow name="domain_age_over_5_years" cat="trust" dir="trust" weight="-25" desc="Domain registered more than 5 years ago." />
+                    <SignalRow name="spf_dkim_dmarc_all_present" cat="trust" dir="trust" weight="-20" desc="Domain has SPF + DKIM selector + DMARC all configured — standard for legitimate senders." />
+                    <SignalRow name="mx_known_legitimate_host" cat="trust" dir="trust" weight="-15" desc="MX points to Google Workspace, Microsoft 365, or another known legit host." />
+                    <SignalRow name="domain_age_over_2_years" cat="trust" dir="trust" weight="-15" desc="Domain registered more than 2 years ago." />
+                    <SignalRow name="catch_all_old_established" cat="trust" dir="trust" weight="-15" desc="Catch-all detected but on a well-established, well-authenticated domain — likely legitimate B2B use." />
                   </tbody>
                 </table>
               </div>
               <p className="mt-3 text-[13px] text-text-3">
-                Above: 22 representative signals. The full reference includes 80+ signals across
-                all categories.
+                Weights marked with <strong>*</strong> are hard disqualifiers: they force{" "}
+                <Code>recommendation: &quot;block&quot;</Code> and short-circuit the rest of the
+                pipeline. Corroborating signals compound non-linearly (1.0× / 1.3× / 1.6× / 1.9×)
+                — see <DocsLink href="#schema">the 5-block structure</DocsLink>.
               </p>
             </Section>
 
@@ -683,8 +766,9 @@ async def webhook(request: Request):
                   ["422", <Code key="c">invalid_request</Code>, "Missing or malformed parameter (email, domain, etc.)."],
                   ["422", <Code key="c">validation_error</Code>, "Pydantic-level validation failed — see message."],
                   ["422", <Code key="c">invalid_webhook_url</Code>, "Webhook URL is not HTTPS or resolves to a private IP."],
-                  ["429", <Code key="c">too_many_requests</Code>, <>Per-key rate limit. See <Code>Retry-After</Code> + <Code>X-RateLimit-*</Code> headers.</>],
-                  ["429", <Code key="c">rate_limit_exceeded</Code>, "Monthly check ceiling (legacy — use too_many_requests for burst limits)."],
+                  ["429", <Code key="c">too_many_requests</Code>, <>Per-key burst rate limit on check endpoints. See <Code>Retry-After</Code> + <Code>X-RateLimit-*</Code> headers.</>],
+                  ["429", <Code key="c">rate_limit_exceeded</Code>, "Auth endpoint flood-control (per-IP, signup/login). Not used on /v1/check."],
+                  ["429", <Code key="c">report_rate_limit_exceeded</Code>, "Too many /v1/report calls from this key in a short window."],
                   ["500", <Code key="c">internal_error</Code>, "Transient server error. Safe to retry with backoff."],
                   ["503", <Code key="c">service_degraded</Code>, "A component (Redis / Postgres / DNS) is degraded. Retry shortly."],
                   ["504", <Code key="c">dns_timeout</Code>, "DNS resolution timed out mid-check. Safe to retry."],
@@ -703,7 +787,8 @@ async def webhook(request: Request):
                 rows={[
                   ["Domain", "Yes", "Postgres (checks + domain_stats)", "Until you delete your account"],
                   ["Full email", "No", "In-memory only during the request", "Discarded on response"],
-                  ["Verdict + signals fired", "Yes", "Postgres + Redis cache", "30-day Redis TTL; Postgres rows persist"],
+                  [<>Per-domain verdict cache (no email)</>, "Yes", "Redis", "4 hours (new domains) → 7 days (confirmed fraud)"],
+                  ["Check rows (domain + verdict + signals)", "Yes", "Postgres", "Until you delete your account"],
                   ["IP address of the caller", "No", "—", "—"],
                   ["Webhook URL + secret", "Per-request", "Discarded after delivery", "Not stored at rest"],
                 ]}
@@ -726,17 +811,16 @@ async def webhook(request: Request):
             <Section id="versioning" last>
               <H2>Versioning</H2>
               <P>
-                API versions use <Code>YYYY-MM</Code> format. Pin a version with the{" "}
-                <Code>API-Version</Code> header:
+                The API is currently at <Code>/v1/</Code>. Every response includes the schema
+                version under <Code>meta.api_version</Code> (currently <Code>2026-04</Code>) so
+                you can detect drift in your logs.
               </P>
-              <CodeBlock label="header">
-{`API-Version: 2026-04`}
-              </CodeBlock>
               <P>
-                Breaking changes release on a new dated version. We support <strong>6 months</strong>{" "}
-                of deprecation for every version before removal, with migration guides published 3
-                months in advance. Unversioned requests use the oldest supported version to guarantee
-                stability.
+                Breaking changes will ship on a new URL prefix (<Code>/v2/</Code>) with at least
+                6 months of overlap and a migration guide published before the cutover. Backward-
+                compatible additions (new optional fields, new endpoints, new signal names) ship
+                on <Code>/v1/</Code> at any time — your code should ignore unknown fields rather
+                than failing on them.
               </P>
             </Section>
           </article>
@@ -755,8 +839,10 @@ function Section({
   last?: boolean;
   children: React.ReactNode;
 }) {
+  // No bottom border between sections — the right-rail On-this-page + the
+  // generous spacing carries the rhythm. Cleaner than dividers everywhere.
   return (
-    <section id={id} className={`pb-14 mb-14 ${last ? "" : "border-b border-border"}`}>
+    <section id={id} className={`scroll-mt-24 ${last ? "pb-8" : "pb-20"}`}>
       {children}
     </section>
   );
@@ -764,7 +850,7 @@ function Section({
 
 function H2({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-4 text-[26px] font-semibold leading-[1.2] tracking-[-0.02em]">
+    <h2 className="mb-5 text-[28px] font-semibold leading-[1.18] tracking-[-0.02em] text-text">
       {children}
     </h2>
   );
@@ -772,7 +858,7 @@ function H2({ children }: { children: React.ReactNode }) {
 
 function H3({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mt-8 mb-3 text-[18px] font-semibold tracking-[-0.015em]">
+    <h3 className="mt-10 mb-3 text-[17px] font-semibold tracking-[-0.012em] text-text">
       {children}
     </h3>
   );
@@ -780,13 +866,13 @@ function H3({ children }: { children: React.ReactNode }) {
 
 function P({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-4 text-[15.5px] leading-[1.7] text-text-2">{children}</p>
+    <p className="mb-5 text-[15.5px] leading-[1.7] text-text-2">{children}</p>
   );
 }
 
 function Code({ children }: { children: React.ReactNode }) {
   return (
-    <code className="rounded-sm border border-border bg-bg-alt px-[6px] py-[1px] font-mono text-[0.9em] text-text">
+    <code className="rounded-[4px] bg-bg-alt px-[5px] py-[1px] font-mono text-[0.88em] text-text">
       {children}
     </code>
   );
@@ -796,7 +882,7 @@ function DocsLink({ href, children }: { href: string; children: React.ReactNode 
   return (
     <Link
       href={href}
-      className="text-accent underline underline-offset-2 hover:text-accent-hover"
+      className="text-accent decoration-accent/30 underline underline-offset-[3px] hover:decoration-accent"
     >
       {children}
     </Link>
@@ -805,7 +891,7 @@ function DocsLink({ href, children }: { href: string; children: React.ReactNode 
 
 function Callout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-6 rounded-r-lg border-l-[3px] border-accent bg-accent-soft px-[18px] py-[14px] text-[14.5px] leading-[1.6] text-text">
+    <div className="mb-6 rounded-md border border-accent/20 bg-accent-soft px-5 py-4 text-[14.5px] leading-[1.6] text-text">
       {children}
     </div>
   );
@@ -820,10 +906,10 @@ function CodeBlock({
 }) {
   return (
     <div className="mb-6 overflow-hidden rounded-lg border border-code-border bg-code-bg">
-      <div className="flex items-center justify-between border-b border-code-border bg-[#13161d] px-[14px] py-[10px] font-mono text-[11px] tracking-[0.04em] text-[#9aa3b5]">
+      <div className="flex items-center justify-between border-b border-code-border bg-[#10131a] px-4 py-[8px] font-mono text-[11px] tracking-[0.003em] text-[#8a93a8]">
         <span>{label}</span>
       </div>
-      <pre className="m-0 overflow-x-auto px-[18px] py-4 font-mono text-[13px] leading-[1.7] text-[#e4e6eb]">
+      <pre className="m-0 overflow-x-auto px-5 py-[14px] font-mono text-[12.5px] leading-[1.65] text-[#e4e6eb]">
         <code>{children}</code>
       </pre>
     </div>
