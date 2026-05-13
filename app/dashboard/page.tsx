@@ -20,7 +20,7 @@ export default async function DashboardOverview() {
 
   return (
     <>
-      <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em]">
+      <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em] max-[640px]:text-[22px]">
         Overview
       </h2>
 
@@ -87,18 +87,17 @@ export default async function DashboardOverview() {
             {activeKeys.slice(0, 3).map((k) => (
               <div
                 key={k.id}
-                className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-t border-border py-[14px] first:border-t-0"
+                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-border py-[14px] first:border-t-0"
               >
-                <div>
+                <div className="min-w-0">
                   <div className="font-medium">{k.name}</div>
-                  <div className="font-mono text-[12px] text-text-2">
+                  <div className="truncate font-mono text-[12px] text-text-2">
                     {k.prefix}…
                   </div>
                 </div>
                 <span className="font-mono text-[12px] text-text-2">
                   Created {new Date(k.created_at).toLocaleDateString()}
                 </span>
-                <span />
               </div>
             ))}
           </div>
@@ -231,11 +230,11 @@ function Stat({
   sub: React.ReactNode;
 }) {
   return (
-    <div className="rounded-md border border-border bg-surface p-[22px]">
+    <div className="rounded-md border border-border bg-surface p-[22px] max-[640px]:p-4">
       <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-text-2">
         {label}
       </div>
-      <div className="text-[28px] font-semibold tracking-[-0.02em] tabular-nums">
+      <div className="text-[28px] font-semibold tracking-[-0.02em] tabular-nums max-[640px]:text-[24px]">
         {value}
       </div>
       <div className="mt-[6px] text-[13px] text-text-3">{sub}</div>
@@ -245,7 +244,7 @@ function Stat({
 
 function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
+    <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
       {children}
     </section>
   );

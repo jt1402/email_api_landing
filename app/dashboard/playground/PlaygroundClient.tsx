@@ -15,9 +15,9 @@ export function PlaygroundClient({ initialBalance }: { initialBalance: number })
 
   return (
     <>
-      <div className="mb-7 flex items-end justify-between gap-4">
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="mb-1 text-[28px] leading-[1.2] tracking-[-0.02em]">
+          <h2 className="mb-1 text-[28px] leading-[1.2] tracking-[-0.02em] max-[640px]:text-[22px]">
             Playground
           </h2>
           <p className="text-[14px] text-text-2">
@@ -30,7 +30,7 @@ export function PlaygroundClient({ initialBalance }: { initialBalance: number })
         </span>
       </div>
 
-      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
+      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
         <form action={formAction} className="grid grid-cols-[1fr_180px_auto] gap-3 max-[700px]:grid-cols-1">
           <div className="flex flex-col gap-[6px]">
             <label
@@ -95,8 +95,8 @@ export function PlaygroundClient({ initialBalance }: { initialBalance: number })
 function ResultPanel({ data }: { data: CheckResponse }) {
   return (
     <>
-      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
-        <div className="mb-4 flex items-center gap-3">
+      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
           <RecommendationBadge rec={data.verdict.recommendation} />
           <span className="font-mono text-[12px] uppercase tracking-[0.08em] text-text-3">
             {data.verdict.risk_level} risk
@@ -135,10 +135,10 @@ function ResultPanel({ data }: { data: CheckResponse }) {
       </section>
 
       <section className="mb-5 grid grid-cols-2 gap-5 max-[700px]:grid-cols-1">
-        <div className="rounded-md border border-border bg-surface px-7 py-6">
+        <div className="rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
           <h3 className="mb-4 text-[16px]">Score</h3>
           <div className="mb-3 flex items-baseline gap-3">
-            <span className="text-[44px] font-semibold tracking-[-0.02em] tabular-nums">
+            <span className="text-[44px] font-semibold tracking-[-0.02em] tabular-nums max-[640px]:text-[36px]">
               {data.score.value}
             </span>
             <span className="text-[14px] text-text-2">
@@ -173,7 +173,7 @@ function ResultPanel({ data }: { data: CheckResponse }) {
             </span>
           </div>
         </div>
-        <div className="rounded-md border border-border bg-surface px-7 py-6">
+        <div className="rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
           <h3 className="mb-4 text-[16px]">Signals</h3>
           {data.signals.fired.length === 0 &&
           data.signals.trust_signals.length === 0 ? (
@@ -191,9 +191,10 @@ function ResultPanel({ data }: { data: CheckResponse }) {
         </div>
       </section>
 
-      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
+      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-5 max-[640px]:py-5">
         <h3 className="mb-4 text-[16px]">Checks run</h3>
-        <table className="w-full border-collapse text-[13px]">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[480px] border-collapse text-[13px]">
           <thead>
             <tr className="text-left text-[12px] text-text-2">
               <th className="py-2 font-medium">Check</th>
@@ -217,6 +218,7 @@ function ResultPanel({ data }: { data: CheckResponse }) {
             ))}
           </tbody>
         </table>
+        </div>
         {data.checks.path_explanation && (
           <p className="mt-4 text-[12px] text-text-3">
             {data.checks.path_explanation}
@@ -253,8 +255,8 @@ r = httpx.post(
 result = r.json()`,
   };
   return (
-    <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
-      <div className="mb-3 flex items-center justify-between gap-4">
+    <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-[16px]">Equivalent API call</h3>
         <div className="flex gap-1 rounded-full bg-bg-alt p-1">
           {(["curl", "node", "python"] as const).map((t) => (

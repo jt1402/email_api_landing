@@ -39,20 +39,20 @@ function BundleRow({ bundle, last }: { bundle: Bundle; last: boolean }) {
           buyBundleAction(fd);
         });
       }}
-      className={`grid grid-cols-[1.6fr_0.9fr_1.3fr_1fr_auto] items-center gap-5 px-7 py-5 transition-colors hover:bg-bg-alt max-[720px]:grid-cols-[1fr_1fr] max-[720px]:gap-2 ${
+      className={`grid grid-cols-[1.6fr_0.9fr_1.3fr_1fr_auto] items-center gap-5 px-7 py-5 transition-colors hover:bg-bg-alt max-[720px]:grid-cols-[1fr_auto] max-[720px]:gap-x-3 max-[720px]:gap-y-1 max-[720px]:px-5 max-[720px]:py-4 ${
         last ? "" : "border-b border-border"
       }`}
     >
       <div className="font-medium tabular-nums max-[720px]:col-span-2 max-[720px]:text-[15px] max-[720px]:font-semibold">
         {bundle.checks} checks
       </div>
-      <div className="text-[20px] font-semibold tabular-nums tracking-[-0.02em]">
+      <div className="text-[20px] font-semibold tabular-nums tracking-[-0.02em] max-[720px]:text-[18px]">
         {bundle.price}
       </div>
-      <div className="font-mono text-[14px] tabular-nums text-text-2">
+      <div className="font-mono text-[14px] tabular-nums text-text-2 max-[720px]:text-right max-[720px]:text-[12px]">
         {bundle.effective} / check
       </div>
-      <div className="text-[14px] font-medium text-ok">
+      <div className="text-[14px] font-medium text-ok max-[720px]:col-span-2 max-[720px]:text-[12px]">
         {bundle.save && `Save ${bundle.save}`}
       </div>
       <button

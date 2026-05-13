@@ -27,7 +27,7 @@ export function KeysClient({ initialKeys, hasPurchased }: Props) {
 
   return (
     <>
-      <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em]">
+      <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em] max-[640px]:text-[22px]">
         API keys
       </h2>
 
@@ -64,14 +64,14 @@ export function KeysClient({ initialKeys, hasPurchased }: Props) {
             {state.error}
           </div>
         )}
-        <form action={formAction} className="flex gap-3">
+        <form action={formAction} className="flex flex-wrap gap-3">
           <input
             name="name"
             placeholder="e.g. Production"
             maxLength={80}
             required
             disabled={freeLimitReached}
-            className="h-10 flex-1 rounded-sm border border-border-strong bg-surface px-3 text-[14px] text-text disabled:cursor-not-allowed disabled:bg-bg-alt disabled:text-text-3"
+            className="h-10 min-w-0 flex-1 basis-[220px] rounded-sm border border-border-strong bg-surface px-3 text-[14px] text-text disabled:cursor-not-allowed disabled:bg-bg-alt disabled:text-text-3"
           />
           <button
             type="submit"
@@ -98,18 +98,17 @@ export function KeysClient({ initialKeys, hasPurchased }: Props) {
           {revoked.map((k) => (
             <div
               key={k.id}
-              className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-t border-border py-[14px] first:border-t-0"
+              className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-border py-[14px] first:border-t-0"
             >
-              <div>
+              <div className="min-w-0">
                 <div className="font-medium text-text-3">{k.name}</div>
-                <div className="font-mono text-[12px] text-text-2">
+                <div className="truncate font-mono text-[12px] text-text-2">
                   {k.prefix}…
                 </div>
               </div>
               <span className="text-[12px] italic text-text-3">
                 revoked {new Date(k.revoked_at as string).toLocaleDateString()}
               </span>
-              <span />
             </div>
           ))}
         </Panel>
@@ -178,7 +177,7 @@ function SecretBanner({
 
 function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
+    <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
       {children}
     </section>
   );
@@ -204,10 +203,10 @@ function KeyRow({ row }: { row: ApiKeyRow }) {
   };
 
   return (
-    <div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-t border-border py-[14px] first:border-t-0">
-      <div>
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border py-[14px] first:border-t-0">
+      <div className="min-w-0 flex-1 basis-[240px]">
         <div className="font-medium">{row.name}</div>
-        <div className="font-mono text-[12px] text-text-2">
+        <div className="truncate font-mono text-[12px] text-text-2">
           {row.prefix}…
           {row.last_used_at && (
             <> · last used {new Date(row.last_used_at).toLocaleDateString()}</>

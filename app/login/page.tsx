@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth, BackendCallError } from "@/lib/backend";
-import { getSession, clearSession } from "@/lib/session";
+import { getSession } from "@/lib/session";
 import { LoginForm } from "./LoginForm";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://127.0.0.1:8001";
@@ -18,7 +18,8 @@ export default async function LoginPage({
       signedIn = true;
     } catch (err) {
       if (err instanceof BackendCallError && err.status === 401) {
-        await clearSession();
+        // Server Components can't mutate cookies; bounce through a route handler.
+        redirect("/auth/clear?next=/login");
       } else {
         throw err;
       }

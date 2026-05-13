@@ -17,7 +17,7 @@ export default async function BillingPage({
 
   return (
     <>
-      <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em]">Billing</h2>
+      <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em] max-[640px]:text-[22px]">Billing</h2>
 
       {checkout === "success" && (
         <>
@@ -33,11 +33,11 @@ export default async function BillingPage({
         </div>
       )}
 
-      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
+      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
         <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-text-2">
           Credits remaining
         </div>
-        <div className="text-[40px] font-semibold leading-none tracking-[-0.02em] tabular-nums">
+        <div className="text-[40px] font-semibold leading-none tracking-[-0.02em] tabular-nums max-[640px]:text-[32px]">
           {balance.credit_balance_checks.toLocaleString()}
         </div>
         <p className="mt-3 text-[14px] text-text-2">
@@ -47,7 +47,7 @@ export default async function BillingPage({
         </p>
       </section>
 
-      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
+      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <h3 className="mb-1 text-[18px]">Buy a bundle</h3>

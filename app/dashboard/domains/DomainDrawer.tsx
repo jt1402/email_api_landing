@@ -17,8 +17,8 @@ export function DomainDrawer({
         className="fixed inset-0 z-40 bg-black/30"
         aria-label="Close"
       />
-      <aside className="fixed right-0 top-0 z-50 flex h-dvh w-[min(640px,100vw)] flex-col overflow-y-auto border-l border-border bg-surface shadow-xl">
-        <header className="sticky top-0 flex items-start justify-between gap-4 border-b border-border bg-surface px-6 py-5">
+      <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[640px] flex-col overflow-y-auto border-l border-border bg-surface shadow-xl">
+        <header className="sticky top-0 flex items-start justify-between gap-4 border-b border-border bg-surface px-5 py-4 max-[640px]:px-4 min-[641px]:px-6 min-[641px]:py-5">
           <div>
             <div className="font-mono text-[18px] text-text">{data.domain}</div>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-text-2">
@@ -33,7 +33,7 @@ export function DomainDrawer({
           </Link>
         </header>
 
-        <div className="flex flex-col gap-5 px-6 py-5">
+        <div className="flex flex-col gap-5 px-5 py-4 min-[641px]:px-6 min-[641px]:py-5">
           <ActionRow
             domain={data.domain}
             inAllow={data.in_allow_list}

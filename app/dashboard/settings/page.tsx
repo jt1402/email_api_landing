@@ -20,9 +20,9 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em]">Settings</h2>
+      <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em] max-[640px]:text-[22px]">Settings</h2>
 
-      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
+      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
         <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-text-2">
           Account
         </div>
@@ -39,7 +39,7 @@ export default async function SettingsPage() {
         </p>
       </section>
 
-      <section className="rounded-md border border-[#fecaca] bg-[#fef2f2] px-7 py-6">
+      <section className="rounded-md border border-[#fecaca] bg-[#fef2f2] px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
         <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[#b91c1c]">
           Danger zone
         </div>

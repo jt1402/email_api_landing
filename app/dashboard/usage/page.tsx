@@ -20,7 +20,7 @@ export default async function UsagePage() {
 
   return (
     <>
-      <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em]">Usage</h2>
+      <h2 className="mb-7 text-[28px] leading-[1.2] tracking-[-0.02em] max-[640px]:text-[22px]">Usage</h2>
 
       <div className="mb-8 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
         <Stat
@@ -54,7 +54,7 @@ export default async function UsagePage() {
         />
       </div>
 
-      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
+      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
         <h3 className="mb-1 text-[18px]">Breakdown by recommendation</h3>
         <p className="mb-5 text-[14px] text-text-2">
           How your checks are split across the four verdict values, this period.
@@ -74,9 +74,9 @@ export default async function UsagePage() {
               return (
                 <div
                   key={row.label}
-                  className="grid grid-cols-[140px_1fr_80px] items-center gap-3"
+                  className="grid grid-cols-[140px_1fr_80px] items-center gap-3 max-[640px]:grid-cols-[1fr_80px] max-[640px]:gap-y-1"
                 >
-                  <div className="font-mono text-[12px] text-text-2">{row.label}</div>
+                  <div className="font-mono text-[12px] text-text-2 max-[640px]:col-span-2">{row.label}</div>
                   <div className="h-[10px] overflow-hidden rounded-full bg-bg-alt">
                     <div
                       className={`h-full rounded-full ${
@@ -99,13 +99,13 @@ export default async function UsagePage() {
         )}
       </section>
 
-      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
+      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
         <h3 className="mb-1 text-[18px]">Daily volume</h3>
         <p className="mb-5 text-[14px] text-text-2">Checks per day for the last 30 days. Blocks shown in red.</p>
         <DailyChart buckets={byDay.buckets} />
       </section>
 
-      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6">
+      <section className="mb-5 rounded-md border border-border bg-surface px-7 py-6 max-[640px]:px-4 max-[640px]:py-5">
         <h3 className="mb-1 text-[18px]">Domain Activity</h3>
         <p className="mb-3 text-[14px] text-text-2">
           Per-domain rollups, signal drill-down, and one-click allow/block live on their own page.
@@ -128,11 +128,11 @@ function Stat({
   sub: React.ReactNode;
 }) {
   return (
-    <div className="rounded-md border border-border bg-surface p-[22px]">
+    <div className="rounded-md border border-border bg-surface p-[22px] max-[640px]:p-4">
       <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-text-2">
         {label}
       </div>
-      <div className="text-[28px] font-semibold tracking-[-0.02em] tabular-nums">
+      <div className="text-[28px] font-semibold tracking-[-0.02em] tabular-nums max-[640px]:text-[24px]">
         {value}
       </div>
       <div className="mt-[6px] text-[13px] text-text-3">{sub}</div>

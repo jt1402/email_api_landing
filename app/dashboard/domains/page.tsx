@@ -66,7 +66,7 @@ export default async function DomainsPage({
     <>
       <div className="mb-2 flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-[28px] leading-[1.2] tracking-[-0.02em]">Domain Activity</h2>
+          <h2 className="text-[28px] leading-[1.2] tracking-[-0.02em] max-[640px]:text-[22px]">Domain Activity</h2>
           <p className="mt-1 max-w-[640px] text-[14px] text-text-2">
             Triage flagged signups, manage trust/block lists, mark reviewed domains as
             decided. Click any row for the full history.
@@ -83,8 +83,8 @@ export default async function DomainsPage({
         q={q ?? ""}
       />
 
-      <section className="mt-5 rounded-md border border-border bg-surface">
-        <table className="w-full border-collapse text-[14px]">
+      <section className="mt-5 overflow-x-auto rounded-md border border-border bg-surface">
+        <table className="w-full min-w-[640px] border-collapse text-[14px]">
           <thead>
             <tr className="text-left text-[12px] text-text-2">
               <th className="px-5 py-3 font-medium">Domain</th>
@@ -325,7 +325,7 @@ function Filters({
           name="q"
           defaultValue={q}
           placeholder="domain substring"
-          className="h-9 w-[180px] rounded-sm border border-border-strong bg-surface px-2 text-[13px] text-text"
+          className="h-9 w-[180px] rounded-sm border border-border-strong bg-surface px-2 text-[13px] text-text max-[640px]:w-full"
         />
       </FilterField>
       <button type="submit" className="btn btn-primary btn-sm">

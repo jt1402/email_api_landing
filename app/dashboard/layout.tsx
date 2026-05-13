@@ -5,6 +5,7 @@ import { auth, billing, BackendCallError } from "@/lib/backend";
 import { getSession } from "@/lib/session";
 import { logoutAction } from "@/app/actions";
 import { WelcomeKeyBanner } from "./WelcomeKeyBanner";
+import { MobileNav } from "./MobileNav";
 
 const LOW_BALANCE_THRESHOLD = 50;
 
@@ -35,38 +36,41 @@ export default async function DashboardLayout({
   const isLow = credits !== null && credits > 0 && credits < LOW_BALANCE_THRESHOLD;
 
   return (
-    <div className="grid min-h-dvh grid-cols-[240px_1fr] bg-bg-alt max-[820px]:grid-cols-1">
-      <aside className="sticky top-0 flex h-dvh flex-col border-r border-border bg-surface px-5 py-6 max-[820px]:static max-[820px]:h-auto max-[820px]:border-b max-[820px]:border-r-0">
-        <div className="mb-7">
-          <Logo />
-        </div>
-        <nav className="flex flex-1 flex-col gap-[2px]">
-          <DashNavLink href="/dashboard">Overview</DashNavLink>
-          <DashNavLink href="/dashboard/playground">Playground</DashNavLink>
-          <DashNavLink href="/dashboard/keys">API keys</DashNavLink>
-          <DashNavLink href="/dashboard/usage">Usage</DashNavLink>
-          <DashNavLink href="/dashboard/domains">Domains</DashNavLink>
-          <DashNavLink href="/dashboard/billing">Billing</DashNavLink>
-          <DashNavLink href="/dashboard/settings">Settings</DashNavLink>
-        </nav>
-        <div className="mt-4 border-t border-border pt-4 text-[13px] text-text-2">
-          <div className="mb-[10px] break-all font-medium text-text">
-            {user.email}
+    <div className="min-h-dvh bg-bg-alt">
+      <MobileNav userEmail={user.email} />
+      <div className="grid min-h-dvh grid-cols-[240px_1fr] max-[820px]:grid-cols-1">
+        <aside className="border-r border-border bg-surface max-[820px]:hidden min-[821px]:sticky min-[821px]:top-0 min-[821px]:flex min-[821px]:h-dvh min-[821px]:flex-col min-[821px]:px-5 min-[821px]:py-6">
+          <div className="mb-7">
+            <Logo />
           </div>
-          <form action={logoutAction}>
-            <button type="submit" className="btn btn-ghost btn-block">
-              Sign out
-            </button>
-          </form>
-        </div>
-      </aside>
-      <main className="max-w-[1100px] py-6 px-12 max-[820px]:py-6 max-[820px]:px-6">
-        <WelcomeKeyBanner />
-        {(isOut || isLow) && credits !== null && (
-          <BalanceBanner credits={credits} critical={isOut} />
-        )}
-        {children}
-      </main>
+          <nav className="flex flex-1 flex-col gap-[2px]">
+            <DashNavLink href="/dashboard">Overview</DashNavLink>
+            <DashNavLink href="/dashboard/playground">Playground</DashNavLink>
+            <DashNavLink href="/dashboard/keys">API keys</DashNavLink>
+            <DashNavLink href="/dashboard/usage">Usage</DashNavLink>
+            <DashNavLink href="/dashboard/domains">Domains</DashNavLink>
+            <DashNavLink href="/dashboard/billing">Billing</DashNavLink>
+            <DashNavLink href="/dashboard/settings">Settings</DashNavLink>
+          </nav>
+          <div className="mt-4 border-t border-border pt-4 text-[13px] text-text-2">
+            <div className="mb-[10px] break-all font-medium text-text">
+              {user.email}
+            </div>
+            <form action={logoutAction}>
+              <button type="submit" className="btn btn-ghost btn-block">
+                Sign out
+              </button>
+            </form>
+          </div>
+        </aside>
+        <main className="max-w-[1100px] py-6 px-12 max-[820px]:py-6 max-[820px]:px-5">
+          <WelcomeKeyBanner />
+          {(isOut || isLow) && credits !== null && (
+            <BalanceBanner credits={credits} critical={isOut} />
+          )}
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

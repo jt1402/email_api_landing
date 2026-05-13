@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type TocItem = {
   id: string;
@@ -58,6 +58,17 @@ export function DocsToc() {
   // sticks on the clicked item even while the smooth-scroll animation is still
   // running through prior sections.
   const [suppressUntil, setSuppressUntil] = useState(0);
+  // Mobile-only collapsed disclosure. Always expanded on desktop via CSS.
+  const [mobileOpen, setMobileOpen] = useState(false);
+  // Auto-hide the mobile bar when scrolling down so it stops obstructing reading;
+  // restore on any upward scroll or when the user is near the top of the page.
+  const [hidden, setHidden] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const lastScrollYRef = useRef(0);
+  const activeItem = items.find((i) => i.id === active);
+  const activeLabel = activeItem
+    ? activeItem.label || `${activeItem.method} ${activeItem.path}`
+    : "On this page";
 
   useEffect(() => {
     let frame = 0;
@@ -95,6 +106,43 @@ export function DocsToc() {
     };
   }, [suppressUntil]);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!navRef.current?.contains(e.target as Node)) setMobileOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastScrollYRef.current;
+      // Always visible near the top.
+      if (y < 120) {
+        setHidden(false);
+      } else if (Math.abs(delta) > 6) {
+        // 6px deadband avoids flicker from sub-pixel jitter / momentum bounces.
+        setHidden(delta > 0);
+      }
+      lastScrollYRef.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Never hide while the menu is open — user is actively engaged with it.
+  const showBar = !hidden || mobileOpen;
+
   const handleClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
     id: string,
@@ -111,13 +159,49 @@ export function DocsToc() {
     history.replaceState(null, "", `#${id}`);
     setActive(id);
     setSuppressUntil(Date.now() + 800);
+    setMobileOpen(false);
   };
 
   return (
-    <nav
-      className="sticky top-[88px] max-h-[calc(100vh-100px)] overflow-y-auto pr-2"
-      aria-label="Documentation sections"
-    >
+    <div className="min-[901px]:contents max-[900px]:h-[46px]">
+      <nav
+        ref={navRef}
+        className={`pr-2 min-[901px]:sticky min-[901px]:top-[88px] min-[901px]:max-h-[calc(100vh-100px)] min-[901px]:overflow-y-auto max-[900px]:fixed max-[900px]:inset-x-6 max-[900px]:top-[64px] max-[900px]:z-30 max-[900px]:rounded-lg max-[900px]:border max-[900px]:border-border max-[900px]:bg-surface max-[900px]:pr-0 max-[900px]:shadow-sm max-[900px]:transition-transform max-[900px]:duration-200 max-[900px]:ease-out ${showBar ? "max-[900px]:translate-y-0" : "max-[900px]:-translate-y-[120px]"}`}
+        aria-hidden={!showBar ? true : undefined}
+        aria-label="Documentation sections"
+      >
+        <button
+          type="button"
+          onClick={() => setMobileOpen((o) => !o)}
+          aria-expanded={mobileOpen}
+          aria-controls="docs-toc-items"
+          className="hidden w-full items-center justify-between gap-3 px-4 py-3 text-left text-[13px] font-medium text-text max-[900px]:flex"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-text-3">
+              On this page
+            </span>
+            <span className="truncate text-text-2">· {activeLabel}</span>
+          </span>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`shrink-0 text-text-3 transition-transform ${mobileOpen ? "rotate-180" : ""}`}
+            aria-hidden="true"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+        <div
+          id="docs-toc-items"
+          className={`max-[900px]:absolute max-[900px]:inset-x-0 max-[900px]:top-full max-[900px]:mt-1 max-[900px]:max-h-[70vh] max-[900px]:overflow-y-auto max-[900px]:rounded-lg max-[900px]:border max-[900px]:border-border max-[900px]:bg-surface max-[900px]:px-2 max-[900px]:py-2 max-[900px]:shadow-lg ${mobileOpen ? "" : "max-[900px]:hidden"}`}
+        >
       {items.map((item, idx) => {
         const isActive = active === item.id;
         const showGroupHeader = !!item.group;
@@ -176,6 +260,8 @@ export function DocsToc() {
           </div>
         );
       })}
-    </nav>
+        </div>
+      </nav>
+    </div>
   );
 }
